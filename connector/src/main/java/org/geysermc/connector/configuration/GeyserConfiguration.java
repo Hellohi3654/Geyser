@@ -79,6 +79,8 @@ public interface GeyserConfiguration {
 	
 	boolean isAllowCustomSkulls();
 
+    boolean isAllowCustomSkulls();
+
     IMetricsInfo getMetrics();
 
     interface IBedrockConfiguration {
