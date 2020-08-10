@@ -40,6 +40,17 @@ public class MathUtils {
         return floatNumber > truncated ? truncated + 1 : truncated;
     }
 
+    public static double constrain(double num, double min, double max) {
+        if (num > max) {
+            num = max;
+        }
+        if (num < min) {
+            num = min;
+        }
+
+        return num;
+    }
+
     /**
      * Converts the given object from an int or byte to byte.
      * This is used for NBT data that might be either an int

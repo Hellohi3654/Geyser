@@ -59,6 +59,7 @@ import org.geysermc.connector.utils.DimensionUtils;
 import org.geysermc.connector.utils.DockerCheck;
 import org.geysermc.connector.utils.LanguageUtils;
 import org.geysermc.connector.utils.LocaleUtils;
+import org.geysermc.connector.utils.ResourcePack;
 
 import javax.naming.directory.Attribute;
 import javax.naming.directory.InitialDirContext;
@@ -139,6 +140,8 @@ public class GeyserConnector {
         PotionMixRegistry.init();
         SoundRegistry.init();
         SoundHandlerRegistry.init();
+
+        ResourcePack.loadPacks();
 
         if (platformType != PlatformType.STANDALONE) {
             DockerCheck.check(bootstrap);
