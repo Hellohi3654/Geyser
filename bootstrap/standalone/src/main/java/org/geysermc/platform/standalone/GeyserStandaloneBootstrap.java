@@ -46,6 +46,7 @@ import org.geysermc.platform.standalone.gui.GeyserStandaloneGUI;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
@@ -60,7 +61,7 @@ public class GeyserStandaloneBootstrap implements GeyserBootstrap {
     private GeyserStandaloneGUI gui;
 
     @Getter
-    private boolean useGui = System.console() == null;
+    private boolean useGui = System.console() == null && !isHeadless();
 
     private GeyserConnector connector;
 
@@ -107,6 +108,9 @@ public class GeyserStandaloneBootstrap implements GeyserBootstrap {
         try {
             File configFile = FileUtils.fileOrCopiedFromResource("config.yml", (x) -> x.replaceAll("generateduuid", UUID.randomUUID().toString()));
             geyserConfig = FileUtils.loadConfig(configFile, GeyserStandaloneConfiguration.class);
+            if (this.geyserConfig.getRemote().getAddress().equalsIgnoreCase("auto")) {
+                geyserConfig.getRemote().setAddress("127.0.0.1");
+            }
         } catch (IOException ex) {
             geyserLogger.severe(LanguageUtils.getLocaleStringLog("geyser.config.failed"), ex);
             System.exit(0);
@@ -125,6 +129,21 @@ public class GeyserStandaloneBootstrap implements GeyserBootstrap {
         if (!useGui) {
             geyserLogger.start(); // Throws an error otherwise
         }
+    }
+
+    /**
+     * Check using {@link java.awt.GraphicsEnvironment} that we are a headless client
+     *
+     * @return If the current environment is headless
+     */
+    private boolean isHeadless() {
+        try {
+            Class<?> graphicsEnv = Class.forName("java.awt.GraphicsEnvironment");
+            Method isHeadless = graphicsEnv.getDeclaredMethod("isHeadless");
+            return (boolean) isHeadless.invoke(null);
+        } catch (Exception ignore) { }
+
+        return true;
     }
 
     @Override
@@ -161,6 +180,6 @@ public class GeyserStandaloneBootstrap implements GeyserBootstrap {
 
     @Override
     public BootstrapDumpInfo getDumpInfo() {
-        return new BootstrapDumpInfo();
+        return new GeyserStandaloneDumpInfo(this);
     }
 }

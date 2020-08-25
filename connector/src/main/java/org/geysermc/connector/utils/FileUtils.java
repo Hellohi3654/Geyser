@@ -25,7 +25,6 @@
 
 package org.geysermc.connector.utils;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,6 +46,7 @@ public class FileUtils {
      *
      * @param src File to load
      * @param valueType Class to load file into
+     * @param <T> the type
      * @return The data as the given class
      * @throws IOException if the config could not be loaded
      */
@@ -61,8 +61,7 @@ public class FileUtils {
     }
 
     public static <T> T loadJson(InputStream src, Class<T> valueType) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper(new JsonFactory()).enable(JsonParser.Feature.IGNORE_UNDEFINED).enable(JsonParser.Feature.ALLOW_COMMENTS).disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        return objectMapper.readValue(src, valueType);
+        return GeyserConnector.JSON_MAPPER.readValue(src, valueType);
     }
 
     /**

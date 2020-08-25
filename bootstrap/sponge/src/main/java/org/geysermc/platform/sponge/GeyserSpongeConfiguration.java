@@ -90,6 +90,11 @@ public class GeyserSpongeConfiguration implements GeyserConfiguration {
     }
 
     @Override
+    public boolean isPassthroughProtocolName() {
+        return node.getNode("passthrough-protocol-name").getBoolean(false);
+    }
+
+    @Override
     public boolean isPassthroughPlayerCounts() {
         return node.getNode("passthrough-player-counts").getBoolean(false);
     }
@@ -150,8 +155,18 @@ public class GeyserSpongeConfiguration implements GeyserConfiguration {
     }
 
     @Override
+    public int getCacheImages() {
+        return node.getNode("cache-skins").getInt(0);
+    }
+
+    @Override
     public boolean isAboveBedrockNetherBuilding() {
         return node.getNode("above-bedrock-nether-building").getBoolean(false);
+    }
+
+    @Override
+    public boolean isForceResourcePacks() {
+        return node.getNode("force-resource-packs").getBoolean(true);
     }
 
     @Override
@@ -172,6 +187,11 @@ public class GeyserSpongeConfiguration implements GeyserConfiguration {
         @Override
         public int getPort() {
             return node.getNode("port").getInt(19132);
+        }
+
+        @Override
+        public boolean isCloneRemotePort() {
+            return node.getNode("clone-remote-port").getBoolean(false);
         }
 
         @Override
@@ -196,8 +216,18 @@ public class GeyserSpongeConfiguration implements GeyserConfiguration {
         }
 
         @Override
+        public void setAddress(String address) {
+            node.getNode("address").setValue(address);
+        }
+
+        @Override
         public int getPort() {
             return node.getNode("port").getInt(25565);
+        }
+
+        @Override
+        public void setPort(int port) {
+            node.getNode("port").setValue(port);
         }
 
         @Override
@@ -236,6 +266,16 @@ public class GeyserSpongeConfiguration implements GeyserConfiguration {
         public String getUniqueId() {
             return node.getNode("metrics").getNode("uuid").getString("generateduuid");
         }
+    }
+
+    @Override
+    public boolean isEnableProxyConnections() {
+        return node.getNode("enable-proxy-connections").getBoolean(false);
+    }
+
+    @Override
+    public int getMtu() {
+        return node.getNode("mtu").getInt(1400);
     }
 
     @Override

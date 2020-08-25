@@ -27,6 +27,7 @@ package org.geysermc.connector.network;
 
 import com.nukkitx.protocol.bedrock.BedrockPacket;
 import com.nukkitx.protocol.bedrock.data.ResourcePackType;
+import com.nukkitx.protocol.bedrock.BedrockPacketCodec;
 import com.nukkitx.protocol.bedrock.packet.*;
 import org.geysermc.connector.GeyserConnector;
 import org.geysermc.connector.common.AuthType;
@@ -38,6 +39,7 @@ import org.geysermc.connector.utils.LoginEncryptionUtils;
 import org.geysermc.connector.utils.MathUtils;
 import org.geysermc.connector.utils.ResourcePack;
 import org.geysermc.connector.utils.ResourcePackManifest;
+import org.geysermc.connector.utils.SettingsUtils;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -54,13 +56,19 @@ public class UpstreamPacketHandler extends LoggingPacketHandler {
 
     @Override
     public boolean handle(LoginPacket loginPacket) {
-        if (loginPacket.getProtocolVersion() > GeyserConnector.BEDROCK_PACKET_CODEC.getProtocolVersion()) {
-            session.disconnect(LanguageUtils.getPlayerLocaleString("geyser.network.outdated.server", session.getClientData().getLanguageCode(), GeyserConnector.BEDROCK_PACKET_CODEC.getMinecraftVersion()));
-            return true;
-        } else if (loginPacket.getProtocolVersion() < GeyserConnector.BEDROCK_PACKET_CODEC.getProtocolVersion()) {
-            session.disconnect(LanguageUtils.getPlayerLocaleString("geyser.network.outdated.client", session.getClientData().getLanguageCode(), GeyserConnector.BEDROCK_PACKET_CODEC.getMinecraftVersion()));
-            return true;
+        BedrockPacketCodec packetCodec = BedrockProtocol.getBedrockCodec(loginPacket.getProtocolVersion());
+        if (packetCodec == null) {
+            if (loginPacket.getProtocolVersion() > BedrockProtocol.DEFAULT_BEDROCK_CODEC.getProtocolVersion()) {
+                // Too early to determine session locale
+                session.disconnect(LanguageUtils.getLocaleStringLog("geyser.network.outdated.server", BedrockProtocol.DEFAULT_BEDROCK_CODEC.getMinecraftVersion()));
+                return true;
+            } else if (loginPacket.getProtocolVersion() < BedrockProtocol.DEFAULT_BEDROCK_CODEC.getProtocolVersion()) {
+                session.disconnect(LanguageUtils.getLocaleStringLog("geyser.network.outdated.client", BedrockProtocol.DEFAULT_BEDROCK_CODEC.getMinecraftVersion()));
+                return true;
+            }
         }
+
+        session.getUpstream().getSession().setPacketCodec(packetCodec);
 
         LoginEncryptionUtils.encryptPlayerConnection(connector, session, loginPacket);
 
@@ -71,10 +79,9 @@ public class UpstreamPacketHandler extends LoggingPacketHandler {
         ResourcePacksInfoPacket resourcePacksInfo = new ResourcePacksInfoPacket();
         for(ResourcePack resourcePack : ResourcePack.PACKS.values()) {
             ResourcePackManifest.Header header = resourcePack.getManifest().getHeader();
-            String version = header.getVersion()[0] + "." + header.getVersion()[1] + "." + header.getVersion()[2];
-            resourcePacksInfo.getResourcePackInfos().add(new ResourcePacksInfoPacket.Entry(header.getUuid().toString(), version, resourcePack.getFile().length(), "", "", "", false));
+            resourcePacksInfo.getResourcePackInfos().add(new ResourcePacksInfoPacket.Entry(header.getUuid().toString(), header.getVersionString(), resourcePack.getFile().length(), "", "", "", false));
         }
-        resourcePacksInfo.setForcedToAccept(true);
+        resourcePacksInfo.setForcedToAccept(GeyserConnector.getInstance().getConfig().isForceResourcePacks());
         session.sendUpstreamPacket(resourcePacksInfo);
         return true;
     }
@@ -97,7 +104,6 @@ public class UpstreamPacketHandler extends LoggingPacketHandler {
                     data.setPackId(header.getUuid());
                     int chunkCount = (int) Math.ceil((int) pack.getFile().length() / (double) ResourcePack.CHUNK_SIZE);
                     data.setChunkCount(chunkCount);
-                    //data.setChunkCount(pack.getFile().length()/ResourcePack.CHUNK_SIZE);
                     data.setCompressedPackSize(pack.getFile().length());
                     data.setMaxChunkSize(ResourcePack.CHUNK_SIZE);
                     data.setHash(pack.getSha256());
@@ -112,13 +118,12 @@ public class UpstreamPacketHandler extends LoggingPacketHandler {
             case HAVE_ALL_PACKS:
                 ResourcePackStackPacket stackPacket = new ResourcePackStackPacket();
                 stackPacket.setExperimental(false);
-                stackPacket.setForcedToAccept(true);
-                stackPacket.setGameVersion(GeyserConnector.BEDROCK_PACKET_CODEC.getMinecraftVersion());
+                stackPacket.setForcedToAccept(false); // Leaving this as false allows the player to choose to download or not
+                stackPacket.setGameVersion(session.getClientData().getGameVersion());
 
                 for(ResourcePack pack : ResourcePack.PACKS.values()) {
                     ResourcePackManifest.Header header = pack.getManifest().getHeader();
-                    String version = header.getVersion()[0] + "." + header.getVersion()[1] + "." + header.getVersion()[2];
-                    stackPacket.getResourcePacks().add(new ResourcePackStackPacket.Entry(header.getUuid().toString(), version, ""));
+                    stackPacket.getResourcePacks().add(new ResourcePackStackPacket.Entry(header.getUuid().toString(), header.getVersionString(), ""));
                 }
 
                 session.sendUpstreamPacket(stackPacket);
@@ -134,6 +139,10 @@ public class UpstreamPacketHandler extends LoggingPacketHandler {
 
     @Override
     public boolean handle(ModalFormResponsePacket packet) {
+        if (packet.getFormId() == SettingsUtils.SETTINGS_FORM_ID) {
+            return SettingsUtils.handleSettingsForm(session, packet.getFormData());
+        }
+
         return LoginEncryptionUtils.authenticateFromForm(session, connector, packet.getFormId(), packet.getFormData());
     }
 
