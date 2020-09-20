@@ -34,6 +34,7 @@ import org.geysermc.connector.common.AuthType;
 import org.geysermc.connector.configuration.GeyserConfiguration;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.PacketTranslatorRegistry;
+import org.geysermc.connector.network.BedrockProtocol;
 import org.geysermc.connector.utils.LanguageUtils;
 import org.geysermc.connector.utils.LoginEncryptionUtils;
 import org.geysermc.connector.utils.MathUtils;
@@ -168,6 +169,10 @@ public class UpstreamPacketHandler extends LoggingPacketHandler {
         LanguageUtils.loadGeyserLocale(session.getClientData().getLanguageCode());
 
         if (!session.isLoggedIn() && !session.isLoggingIn() && session.getConnector().getAuthType() == AuthType.ONLINE) {
+            PlayStatusPacket playStatusPacket = new PlayStatusPacket();
+            playStatusPacket.setStatus(PlayStatusPacket.Status.PLAYER_SPAWN);
+            session.sendUpstreamPacket(playStatusPacket);
+
             // TODO it is safer to key authentication on something that won't change (UUID, not username)
             if (!couldLoginUserByName(session.getAuthData().getName())) {
                 LoginEncryptionUtils.showLoginWindow(session);

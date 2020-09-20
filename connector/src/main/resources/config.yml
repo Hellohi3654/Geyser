@@ -106,6 +106,9 @@ cache-chunks: false
 # A value of 0 is disabled. (Default: 0)
 cache-images: 0
 
+# Allows custom skulls to be displayed.
+allow-custom-skulls: true
+
 # Bedrock prevents building and displaying blocks above Y127 in the Nether -
 # enabling this config option works around that by changing the Nether dimension ID
 # to the End ID. The main downside to this is that the sky will resemble that of
@@ -143,4 +146,5 @@ enable-proxy-connections: false
 # 1400 is the default.
 # mtu: 1400
 
-config-version: 4
+config-version: 5
+

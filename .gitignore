@@ -240,5 +240,9 @@ config.yml
 logs/
 public-key.pem
 locales/
+
+### VS Code ###
+.vscode
+# Note: Manually edited to change cache/ to /cache/
 /cache/
 /packs/

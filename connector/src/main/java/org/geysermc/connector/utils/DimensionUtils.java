@@ -29,9 +29,7 @@ import com.github.steveice10.mc.protocol.data.game.entity.Effect;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
 import com.nukkitx.math.vector.Vector3i;
-import com.nukkitx.protocol.bedrock.packet.ChangeDimensionPacket;
-import com.nukkitx.protocol.bedrock.packet.MobEffectPacket;
-import com.nukkitx.protocol.bedrock.packet.StopSoundPacket;
+import com.nukkitx.protocol.bedrock.packet.*;
 import org.geysermc.connector.GeyserConnector;
 import org.geysermc.connector.entity.Entity;
 import org.geysermc.connector.network.session.GeyserSession;
@@ -54,6 +52,7 @@ public class DimensionUtils {
 
         session.getEntityCache().removeAllEntities();
         session.getItemFrameCache().clear();
+        session.getSkullCache().clear();
         if (session.getPendingDimSwitches().getAndIncrement() > 0) {
             ChunkUtils.sendEmptyChunks(session, player.getPosition().toInt(), 3, true);
         }

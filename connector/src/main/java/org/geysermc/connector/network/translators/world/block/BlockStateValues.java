@@ -42,6 +42,7 @@ public class BlockStateValues {
     private static final Int2ByteMap COMMAND_BLOCK_VALUES = new Int2ByteOpenHashMap();
     private static final Int2ObjectMap<DoubleChestValue> DOUBLE_CHEST_VALUES = new Int2ObjectOpenHashMap<>();
     private static final Int2ObjectMap<String> FLOWER_POT_VALUES = new Int2ObjectOpenHashMap<>();
+    private static final Map<Integer, String> WALL_SKULL_DIRECTION = new HashMap<>();
     private static final Map<String, NbtMap> FLOWER_POT_BLOCKS = new HashMap<>();
     private static final Int2IntMap NOTEBLOCK_PITCHES = new Int2IntOpenHashMap();
     private static final Int2BooleanMap IS_STICKY_PISTON = new Int2BooleanOpenHashMap();
@@ -216,6 +217,16 @@ public class BlockStateValues {
             return SKULL_VARIANTS.get(state);
         }
         return -1;
+    }
+
+    /**
+     * Skull rotations are part of the namespaced ID in Java Edition, but part of the block entity tag in Bedrock.
+     * This gives a string rotation that Bedrock can use.
+     *
+     * @return Skull wall rotation value with the blockstate
+     */
+    public static Map<Integer, String> getWallSkullDirection() {
+        return WALL_SKULL_DIRECTION;
     }
 
     /**

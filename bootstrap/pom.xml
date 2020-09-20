@@ -35,10 +35,7 @@
         </repository>
     </repositories>
     <modules>
-        <module>bungeecord</module>
         <module>spigot</module>
-        <module>sponge</module>
         <module>standalone</module>
-        <module>velocity</module>
     </modules>
 </project>
