@@ -29,10 +29,12 @@ package org.geysermc.connector.network.translators.world.collision.translators;
 import org.geysermc.connector.network.translators.world.collision.CollisionRemapper;
 import org.geysermc.connector.utils.BoundingBox;
 
-@CollisionRemapper(regex = "air$|_sapling$|^water$|^lava$|_rail$|^cobweb$|^grass$|fern$|^dead_bush$|^dandelion$|^poppy$|^blue_orchid$|^allium$|^azure_bluet$|_tulip$|^oxeye_daisy$|^cornflower$|^wither_rose$|^lily_of_the_valley$|_mushroom$|^fire$|^redstone_wire$|^wheat$|^rail$|_sign$|^lever$|torch$|^sugar_cane$|_stem$|^vine$|^nether_wart$|_portal$|^tripwire|^potted_dandelion$|^carrots$|^potatoes$|_button$|_pressure_plate$|^sunflower$|^lilac$|^rose_bush$|^tall_grass$|_banner$|^beetroots$|^end_gateway$")
-public class EmptyCollision extends BlockCollision {
-    public EmptyCollision(String params) {
+@CollisionRemapper(regex = "^repeater$")
+public class RepeaterCollision extends BlockCollision {
+    public RepeaterCollision(String params) {
         super();
-        boundingBoxes = new BoundingBox[0];
+        boundingBoxes = new BoundingBox[]{
+                new BoundingBox(0.5, 0.0625, 0.5, 1, 0.125, 1)
+        };
     }
 }
