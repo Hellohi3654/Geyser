@@ -111,7 +111,7 @@ public class GeyserSession implements CommandSender {
     private InventoryCache inventoryCache;
     private WorldCache worldCache;
     private WindowCache windowCache;
-	private Map<Position, PlayerEntity> skullCache = new ConcurrentHashMap<>();
+	  private Map<Position, PlayerEntity> skullCache = new ConcurrentHashMap<>();
     private final Int2ObjectMap<TeleportCache> teleportMap = new Int2ObjectOpenHashMap<>();
 
     @Getter
