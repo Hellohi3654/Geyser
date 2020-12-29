@@ -54,6 +54,8 @@ jobs:
       with:
         # number of days the package has to be old to be purged
         days-old: 1
+        # string to be contained in the package name.
+        package-name-query: *
 
     - name: Build with Maven Deploy
       run: mvn javadoc:jar source:jar deploy -DskipTests -T 2C
