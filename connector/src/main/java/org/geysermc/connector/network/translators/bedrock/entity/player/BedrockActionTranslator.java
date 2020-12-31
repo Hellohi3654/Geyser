@@ -139,7 +139,7 @@ public class BedrockActionTranslator extends PacketTranslator<PlayerActionPacket
                         startBreak.setType(LevelEventType.BLOCK_START_BREAK);
                         startBreak.setPosition(vector.toFloat());
                         PlayerInventory inventory = session.getPlayerInventory();
-                        GeyserItemStack item = inventory.getItemInHand();
+                        GeyserItemStack item = session.getPlayerInventory().getItemInHand();
                         ItemEntry itemEntry = null;
                         CompoundTag nbtData = new CompoundTag("");
                         if (item != null) {
