@@ -95,19 +95,6 @@ public class JavaPlayerActionAckTranslator extends PacketTranslator<ServerPlayer
                     session.sendUpstreamPacket(levelEvent);
                     break;
                 }
-                levelEvent.setType(LevelEventType.BLOCK_START_BREAK);
-                levelEvent.setPosition(Vector3f.from(
-                        packet.getPosition().getX(),
-                        packet.getPosition().getY(),
-                        packet.getPosition().getZ()
-                ));
-                PlayerInventory inventory = session.getPlayerInventory();
-                GeyserItemStack item = inventory.getItemInHand();
-                double breakTime = Math.ceil(BlockUtils.getBreakTime(blockHardness, packet.getNewState(), itemEntry, nbtData, session) * 20);
-                levelEvent.setData((int) (65535 / breakTime));
-                session.setBreakingBlock(packet.getNewState());
-                session.sendUpstreamPacket(levelEvent);
-                break;
         }
     }
 }
