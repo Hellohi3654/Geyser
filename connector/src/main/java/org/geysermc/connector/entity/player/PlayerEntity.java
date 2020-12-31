@@ -52,6 +52,7 @@ import org.geysermc.connector.entity.type.EntityType;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.scoreboard.Team;
 import org.geysermc.connector.utils.AttributeUtils;
+import org.geysermc.connector.network.session.cache.EntityEffectCache;
 import org.geysermc.connector.network.translators.chat.MessageTranslator;
 
 import java.util.ArrayList;
@@ -65,6 +66,7 @@ public class PlayerEntity extends LivingEntity {
     private GameProfile profile;
     private UUID uuid;
     private String username;
+    private String displayName;
     private boolean playerList = true;  // Player is in the player list
 
     /**
@@ -86,6 +88,9 @@ public class PlayerEntity extends LivingEntity {
 
     @Override
     public void spawnEntity(GeyserSession session) {
+        if (!session.getUpstream().isInitialized())
+            return;
+
         AddPlayerPacket addPlayerPacket = new AddPlayerPacket();
         addPlayerPacket.setUuid(uuid);
         addPlayerPacket.setUsername(username);
@@ -117,7 +122,7 @@ public class PlayerEntity extends LivingEntity {
         if (session.getEntityCache().getPlayerEntity(uuid) == null)
             return;
 
-        if (session.getUpstream().isInitialized() && session.getEntityCache().getEntityByGeyserId(geyserId) == null) {
+        if (session.getEntityCache().getEntityByGeyserId(geyserId) == null) {
             session.getEntityCache().spawnEntity(this);
         } else {
             spawnEntity(session);
@@ -336,5 +341,13 @@ public class PlayerEntity extends LivingEntity {
         updateAttributesPacket.setRuntimeEntityId(geyserId);
         updateAttributesPacket.setAttributes(attributes);
         session.sendUpstreamPacket(updateAttributesPacket);
+    }
+
+    /**
+     * Returns the DisplayName if set, otherwise the Username
+     * @return Name of player entity
+     */
+    public String getName() {
+        return displayName == null ? username : displayName;
     }
 }

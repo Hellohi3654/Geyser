@@ -39,6 +39,8 @@ import com.nukkitx.protocol.bedrock.packet.ItemStackResponsePacket;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import lombok.AllArgsConstructor;
+import org.geysermc.connector.event.EventManager;
+import org.geysermc.connector.event.events.registry.InventoryTranslatorRegistryEvent;
 import org.geysermc.connector.inventory.CartographyContainer;
 import org.geysermc.connector.inventory.GeyserItemStack;
 import org.geysermc.connector.inventory.Inventory;

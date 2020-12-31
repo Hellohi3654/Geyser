@@ -59,6 +59,7 @@ public class SkullPlayerEntity extends PlayerEntity {
         metadata.put(EntityData.BOUNDING_BOX_WIDTH, 0.001f);
         metadata.getOrCreateFlags().setFlag(EntityFlag.CAN_SHOW_NAME, false);
         metadata.getFlags().setFlag(EntityFlag.INVISIBLE, true); // Until the skin is loaded
+        metadata.getFlags().setFlag(EntityFlag.NO_AI, true);
     }
 
     public void despawnEntity(GeyserSession session, Vector3i position) {

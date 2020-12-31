@@ -1,3 +1,21 @@
+## Warning Do not use master branch it is not tested 
+## Instead use Stable or bundabrg-bleeding Branch VVV
+- (https://github.com/Hellohi3654/Geyser/tree/bundabrg-bleeding)
+- (https://github.com/Hellohi3654/Geyser/tree/Stable)
+
+## This branch is a combination of many different geyser forks
+- Don't message geyser devs if you find a problem
+- Create a issue on my fork I will try and fix it (https://github.com/Hellohi3654/Geyser/issues)
+- You can either compile this branch yourself or download the lastest release (https://github.com/Hellohi3654/Geyser/releases)
+- Here's a list of features this branch includes:
+* [Block Breaking Refactors](https://github.com/GeyserMC/Geyser/pull/1336)
+* [Smooth Pistons](https://github.com/GeyserMC/Geyser/pull/1542)
+* [Replace Spaces in Usernames with Underscores](https://github.com/GeyserMC/Geyser/pull/264)
+* [Improve Playerlist](https://github.com/GeyserMC/Geyser/pull/711)
+* [Native Geyser Extension Support](https://github.com/GeyserMC/Geyser/pull/742)
+* [Improved Login Process](https://github.com/GeyserMC/Geyser/pull/1184)
+* [Remove 'geyser' from commands fix](https://github.com/GeyserMC/Geyser/pull/1266)
+
 <img src="https://geysermc.org/img/geyser-1760-860.png" alt="Geyser" width="600"/>
 
 [![forthebadge made-with-java](http://ForTheBadge.com/images/badges/made-with-java.svg)](https://java.com/)
@@ -37,7 +55,7 @@ Take a look [here](https://github.com/GeyserMC/Geyser/wiki#Setup) for how to set
 - Lecterns
 - Near-perfect movement (to the point where anticheat on large servers is unlikely to ban you)
 - Resource pack conversion/CustomModelData
-- Some Entity Flags
+- Some Entity Flags (We don't talk about the squids)
 - The Following Inventories 
   - Enchantment Table (as a proper GUI)
   - Beacon
@@ -59,7 +77,7 @@ The following things can't be fixed because of Bedrock limitations. They might b
 1. Clone the repo to your computer
 2. [Install Maven](https://maven.apache.org/install.html)
 3. Navigate to the Geyser root directory and run `git submodule update --init --recursive`. This downloads all the needed submodules for Geyser and is a crucial step in this process.
-4. Run `mvn clean install` and locate to the `target` folder.
+4. Run `mvn -U clean install` and locate to the `target` folder.
 
 ## Contributing
 Any contributions are appreciated. Please feel free to reach out to us on [Discord](http://discord.geysermc.org/) if
@@ -70,3 +88,7 @@ you're interested in helping out with Geyser.
 - [Steveice10's Java Protocol Library](https://github.com/Steveice10/MCProtocolLib)
 - [TerminalConsoleAppender](https://github.com/Minecrell/TerminalConsoleAppender)
 - [Simple Logging Facade for Java (slf4j)](https://github.com/qos-ch/slf4j)
+
+## Update submodules VVV
+
+Do `git submodule update` to update submodules in local branch to update submodules

@@ -117,6 +117,10 @@ public class Entity {
     }
 
     public void spawnEntity(GeyserSession session) {
+        if (!session.getUpstream().isInitialized()) {
+            return;
+        }
+
         AddEntityPacket addEntityPacket = new AddEntityPacket();
         addEntityPacket.setIdentifier(entityType.getIdentifier());
         addEntityPacket.setRuntimeEntityId(geyserId);
@@ -274,13 +278,9 @@ public class Entity {
                     metadata.getFlags().setFlag(EntityFlag.SWIMMING, ((xd & 0x10) == 0x10) && metadata.getFlags().getFlag(EntityFlag.SPRINTING)); // Otherwise swimming is enabled on older servers
                     metadata.getFlags().setFlag(EntityFlag.GLIDING, (xd & 0x80) == 0x80);
 
-                    if ((xd & 0x20) == 0x20) {
-                        // Armour stands are handled in their own class
-                        if (!this.is(ArmorStandEntity.class)) {
-                            metadata.getFlags().setFlag(EntityFlag.INVISIBLE, true);
-                        }
-                    } else {
-                        metadata.getFlags().setFlag(EntityFlag.INVISIBLE, false);
+                    // Armour stands are handled in their own class
+                    if (!this.is(ArmorStandEntity.class)) {
+                        metadata.getFlags().setFlag(EntityFlag.INVISIBLE, (xd & 0x20) == 0x20);
                     }
 
                     // Shield code

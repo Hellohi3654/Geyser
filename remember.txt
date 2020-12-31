@@ -1,0 +1,13 @@
+Put this in pom.xml
+<servers>
+	<server>
+	<id>central</id>
+	<username>${{ secrets.USERNAME }}</username>
+	<password>${{ secrets.PASSWORD }}</password>
+	</server>
+	<server>
+	<id>snapshots</id>
+	<username>${{ secrets.USERNAME }}</username>
+	<password>${{ secrets.PASSWORD }}</password>
+	</server>
+    </servers>
