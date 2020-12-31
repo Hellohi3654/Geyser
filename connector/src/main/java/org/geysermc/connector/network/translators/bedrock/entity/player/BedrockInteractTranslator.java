@@ -38,7 +38,9 @@ import com.nukkitx.protocol.bedrock.packet.ContainerOpenPacket;
 import com.nukkitx.protocol.bedrock.packet.InteractPacket;
 import lombok.Getter;
 import org.geysermc.connector.entity.Entity;
+import org.geysermc.connector.entity.living.animal.horse.AbstractHorseEntity;
 import org.geysermc.connector.entity.type.EntityType;
+import org.geysermc.connector.inventory.GeyserItemStack;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.PacketTranslator;
 import org.geysermc.connector.network.translators.Translator;
@@ -98,7 +100,7 @@ public class BedrockInteractTranslator extends PacketTranslator<InteractPacket> 
 
         switch (packet.getAction()) {
             case INTERACT:
-                if (session.getInventory().getItem(session.getInventory().getHeldItemSlot() + 36).getId() == ItemRegistry.SHIELD.getJavaId()) {
+                if (session.getPlayerInventory().getItemInHand().getJavaId() == ItemRegistry.SHIELD.getJavaId()) {
                     break;
                 }
                 ClientPlayerInteractEntityPacket interactPacket = new ClientPlayerInteractEntityPacket((int) entity.getEntityId(),
@@ -122,7 +124,7 @@ public class BedrockInteractTranslator extends PacketTranslator<InteractPacket> 
                     if (interactEntity == null)
                         return;
                     EntityDataMap entityMetadata = interactEntity.getMetadata();
-                    ItemEntry itemEntry = session.getInventory().getItemInHand() == null ? ItemEntry.AIR : ItemRegistry.getItem(session.getInventory().getItemInHand());
+                    ItemEntry itemEntry = session.getPlayerInventory().getItemInHand() == GeyserItemStack.EMPTY ? ItemEntry.AIR : ItemRegistry.getItem(session.getPlayerInventory().getItemInHand().getItemStack());
                     String javaIdentifierStripped = itemEntry.getJavaIdentifier().replace("minecraft:", "");
 
                     // TODO - in the future, update these in the metadata? So the client doesn't have to wiggle their cursor around for it to happen
@@ -136,8 +138,8 @@ public class BedrockInteractTranslator extends PacketTranslator<InteractPacket> 
                             interactEntity.getEntityType() == EntityType.PIG || interactEntity.getEntityType() == EntityType.STRIDER)) {
                         // Entity can be saddled and the conditions meet (entity can be saddled and, if needed, is tamed)
                         interactiveTag = InteractiveTag.SADDLE;
-                    } else if (javaIdentifierStripped.equals("name_tag") && session.getInventory().getItemInHand().getNbt() != null &&
-                        session.getInventory().getItemInHand().getNbt().contains("display")) {
+                    } else if (javaIdentifierStripped.equals("name_tag") && session.getPlayerInventory().getItemInHand().getNbt() != null &&
+                        session.getPlayerInventory().getItemInHand().getNbt().contains("display")) {
                         // Holding a named name tag
                         interactiveTag = InteractiveTag.NAME;
                     } else if (javaIdentifierStripped.equals("lead") && LEASHABLE_MOB_TYPES.contains(interactEntity.getEntityType()) &&
@@ -355,14 +357,24 @@ public class BedrockInteractTranslator extends PacketTranslator<InteractPacket> 
                 }
                 break;
             case OPEN_INVENTORY:
-                if (!session.getInventory().isOpen()) {
-                    ContainerOpenPacket containerOpenPacket = new ContainerOpenPacket();
-                    containerOpenPacket.setId((byte) 0);
-                    containerOpenPacket.setType(ContainerType.INVENTORY);
-                    containerOpenPacket.setUniqueEntityId(-1);
-                    containerOpenPacket.setBlockPosition(entity.getPosition().toInt());
-                    session.sendUpstreamPacket(containerOpenPacket);
-                    session.getInventory().setOpen(true);
+                if (session.getOpenInventory() == null) {
+                    Entity ridingEntity = session.getRidingVehicleEntity();
+                    if (ridingEntity instanceof AbstractHorseEntity) {
+                        if (ridingEntity.getMetadata().getFlags().getFlag(EntityFlag.TAMED)) {
+                            // We should request to open the horse inventory instead
+                            ClientPlayerStatePacket openHorseWindowPacket = new ClientPlayerStatePacket((int)session.getPlayerEntity().getEntityId(), PlayerState.OPEN_HORSE_INVENTORY);
+                            session.sendDownstreamPacket(openHorseWindowPacket);
+                        }
+                    } else {
+                        session.setOpenInventory(session.getPlayerInventory());
+
+                        ContainerOpenPacket containerOpenPacket = new ContainerOpenPacket();
+                        containerOpenPacket.setId((byte) 0);
+                        containerOpenPacket.setType(ContainerType.INVENTORY);
+                        containerOpenPacket.setUniqueEntityId(-1);
+                        containerOpenPacket.setBlockPosition(entity.getPosition().toInt());
+                        session.sendUpstreamPacket(containerOpenPacket);
+                    }
                 }
                 break;
         }
