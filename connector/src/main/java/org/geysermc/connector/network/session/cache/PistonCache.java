@@ -60,7 +60,7 @@ public class PistonCache {
     @Getter @Setter
     private boolean playerCollided = false;
 
-    private long lastMotionPacket;
+    private ScheduledFuture<?> updater;
 
     public PistonCache(GeyserSession session) {
         this.session = session;
