@@ -95,7 +95,6 @@ public class JavaPlayerActionAckTranslator extends PacketTranslator<ServerPlayer
                     session.sendUpstreamPacket(levelEvent);
                     break;
                 }
-                blockHardness = BlockTranslator.JAVA_RUNTIME_ID_TO_HARDNESS.get(packet.getNewState());
                 levelEvent.setType(LevelEventType.BLOCK_START_BREAK);
                 levelEvent.setPosition(Vector3f.from(
                         packet.getPosition().getX(),
@@ -104,7 +103,6 @@ public class JavaPlayerActionAckTranslator extends PacketTranslator<ServerPlayer
                 ));
                 PlayerInventory inventory = session.getPlayerInventory();
                 GeyserItemStack item = inventory.getItemInHand();
-                double breakTime = Math.ceil(BlockUtils.getBreakTime(blockHardness, packet.getNewState(), item.getItemEntry(), item.getNbt(), session) * 20);
                 levelEvent.setData((int) (65535 / breakTime));
                 session.setBreakingBlock(packet.getNewState());
                 session.sendUpstreamPacket(levelEvent);
