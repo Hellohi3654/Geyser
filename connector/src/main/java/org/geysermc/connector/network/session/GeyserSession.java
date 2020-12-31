@@ -375,16 +375,12 @@ public class GeyserSession implements CommandSender {
     private List<UUID> selectedEmotes = new ArrayList<>();
     private final Set<UUID> emotes = new HashSet<>();
 
-    @Setter
-    private BookEditCache bookEditCache;
-
     private MinecraftProtocol protocol;
 
     public GeyserSession(GeyserConnector connector, BedrockServerSession bedrockServerSession) {
         this.connector = connector;
         this.upstream = new UpstreamSession(bedrockServerSession);
 
-        this.bookEditCache = new BookEditCache(this);
         this.chunkCache = new ChunkCache(this);
         this.entityCache = new EntityCache(this);
         this.effectCache = new EntityEffectCache();
@@ -669,7 +665,6 @@ public class GeyserSession implements CommandSender {
             }
         }
 
-        this.bookEditCache = null;
         this.chunkCache = null;
         this.entityCache = null;
         this.effectCache = null;
