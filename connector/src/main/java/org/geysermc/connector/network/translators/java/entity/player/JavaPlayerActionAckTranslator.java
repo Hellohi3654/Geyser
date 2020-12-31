@@ -111,17 +111,6 @@ public class JavaPlayerActionAckTranslator extends PacketTranslator<ServerPlayer
                 session.setBreakingBlock(packet.getNewState());
                 session.sendUpstreamPacket(levelEvent);
                 break;
-            case CANCEL_DIGGING:
-                levelEvent.setType(LevelEventType.BLOCK_STOP_BREAK);
-                levelEvent.setPosition(Vector3f.from(
-                        packet.getPosition().getX(),
-                        packet.getPosition().getY(),
-                        packet.getPosition().getZ()
-                ));
-                levelEvent.setData(0);
-                session.setBreakingBlock(0);
-                session.sendUpstreamPacket(levelEvent);
-                break;
         }
     }
 }
