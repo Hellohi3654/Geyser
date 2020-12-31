@@ -72,7 +72,7 @@ public class JavaPlayerActionAckTranslator extends PacketTranslator<ServerPlayer
                             packet.getPosition().getZ()
                     ));
                     PlayerInventory inventory = session.getPlayerInventory();
-                    ItemStack item = inventory.getItemInHand();
+                    GeyserItemStack item = inventory.getItemInHand();
                     ItemEntry itemEntry = null;
                     CompoundTag nbtData = new CompoundTag("");
                     if (item != null) {
