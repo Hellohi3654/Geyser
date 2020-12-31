@@ -33,6 +33,7 @@ import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.nukkitx.math.vector.Vector3f;
 import com.nukkitx.protocol.bedrock.data.LevelEventType;
 import com.nukkitx.protocol.bedrock.packet.LevelEventPacket;
+import org.geysermc.connector.inventory.GeyserItemStack;
 import org.geysermc.connector.inventory.PlayerInventory;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.PacketTranslator;
@@ -95,7 +96,32 @@ public class JavaPlayerActionAckTranslator extends PacketTranslator<ServerPlayer
                     session.setBreakingBlock(0);
                     session.sendUpstreamPacket(levelEvent);
                     break;
-            }
+                }
+                blockHardness = BlockTranslator.JAVA_RUNTIME_ID_TO_HARDNESS.get(packet.getNewState());
+                levelEvent.setType(LevelEventType.BLOCK_START_BREAK);
+                levelEvent.setPosition(Vector3f.from(
+                        packet.getPosition().getX(),
+                        packet.getPosition().getY(),
+                        packet.getPosition().getZ()
+                ));
+                PlayerInventory inventory = session.getPlayerInventory();
+                GeyserItemStack item = inventory.getItemInHand();
+                double breakTime = Math.ceil(BlockUtils.getBreakTime(blockHardness, packet.getNewState(), item.getItemEntry(), item.getNbt(), session) * 20);
+                levelEvent.setData((int) (65535 / breakTime));
+                session.setBreakingBlock(packet.getNewState());
+                session.sendUpstreamPacket(levelEvent);
+                break;
+            case CANCEL_DIGGING:
+                levelEvent.setType(LevelEventType.BLOCK_STOP_BREAK);
+                levelEvent.setPosition(Vector3f.from(
+                        packet.getPosition().getX(),
+                        packet.getPosition().getY(),
+                        packet.getPosition().getZ()
+                ));
+                levelEvent.setData(0);
+                session.setBreakingBlock(0);
+                session.sendUpstreamPacket(levelEvent);
+                break;
         }
     }
 }
