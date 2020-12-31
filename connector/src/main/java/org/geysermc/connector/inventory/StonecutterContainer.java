@@ -25,71 +25,29 @@
 
 package org.geysermc.connector.inventory;
 
-import com.nukkitx.math.vector.Vector3i;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import org.geysermc.connector.network.session.GeyserSession;
 
-import java.util.Arrays;
-
-public class Inventory {
-
-    @Getter
-    protected int id;
-
-    @Getter
-    protected final int size;
-
-    @Getter
-    @Setter
-    protected String title;
-
-    protected GeyserItemStack[] items;
-
+public class StonecutterContainer extends Container {
     /**
-     * The location of the inventory block. Will either be a fake block above the player's head, or the actual block location
+     * The button that has currently been pressed Java-side
      */
     @Getter
     @Setter
-    protected Vector3i holderPosition = Vector3i.ZERO;
+    private int stonecutterButton = -1;
 
-    @Getter
-    @Setter
-    protected long holderId = -1;
-
-    @Getter
-    protected short transactionId = 0;
-
-    protected Inventory(int id, int size) {
-        this("Inventory", id, size);
+    public StonecutterContainer(String title, int id, int size, PlayerInventory playerInventory) {
+        super(title, id, size, playerInventory);
     }
 
-    protected Inventory(String title, int id, int size) {
-        this.title = title;
-        this.id = id;
-        this.size = size;
-        this.items = new GeyserItemStack[size];
-        Arrays.fill(items, GeyserItemStack.EMPTY);
-    }
-
-    public GeyserItemStack getItem(int slot) {
-        return items[slot];
-    }
-
+    @Override
     public void setItem(int slot, @NonNull GeyserItemStack newItem, GeyserSession session) {
-        GeyserItemStack oldItem = items[slot];
-        if (!newItem.isEmpty()) {
-            if (newItem.getItemData(session).equals(oldItem.getItemData(session), false, false, false)) {
-                newItem.setNetId(oldItem.getNetId());
-            } else {
-                newItem.setNetId(session.getNextItemNetId());
-            }
+        if (slot == 0 && newItem.getJavaId() != items[slot].getJavaId()) {
+            // The pressed stonecutter button output resets whenever the input item changes
+            this.stonecutterButton = -1;
         }
-        items[slot] = newItem;
-    }
-
-    public short getNextTransactionId() {
-        return ++transactionId;
+        super.setItem(slot, newItem, session);
     }
 }
