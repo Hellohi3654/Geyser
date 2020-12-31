@@ -25,7 +25,6 @@
 
 package org.geysermc.connector.network.translators.java.entity.player;
 
-import com.github.steveice10.mc.protocol.data.game.entity.metadata.ItemStack;
 import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
 import com.github.steveice10.mc.protocol.data.game.entity.player.PlayerAction;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerActionAckPacket;
@@ -72,12 +71,11 @@ public class JavaPlayerActionAckTranslator extends PacketTranslator<ServerPlayer
                             packet.getPosition().getY(),
                             packet.getPosition().getZ()
                     ));
-                    PlayerInventory inventory = session.getInventory();
+                    PlayerInventory inventory = session.getPlayerInventory();
                     ItemStack item = inventory.getItemInHand();
                     ItemEntry itemEntry = null;
                     CompoundTag nbtData = new CompoundTag("");
                     if (item != null) {
-                        itemEntry = ItemRegistry.getItem(item);
                         nbtData = item.getNbt();
                     }
                     double breakTime = Math.ceil(BlockUtils.getBreakTime(blockHardness, packet.getNewState(), itemEntry, nbtData, session) * 20);
