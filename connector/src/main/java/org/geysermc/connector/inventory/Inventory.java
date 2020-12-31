@@ -25,25 +25,17 @@
 
 package org.geysermc.connector.inventory;
 
-import com.github.steveice10.mc.protocol.data.game.entity.metadata.ItemStack;
-import com.github.steveice10.mc.protocol.data.game.window.WindowType;
 import com.nukkitx.math.vector.Vector3i;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Arrays;
 
 public class Inventory {
 
     @Getter
     protected int id;
-
-    @Getter
-    @Setter
-    protected boolean open;
-
-    @Getter
-    protected WindowType windowType;
 
     @Getter
     protected final int size;
@@ -52,9 +44,11 @@ public class Inventory {
     @Setter
     protected String title;
 
-    @Setter
-    protected ItemStack[] items;
+    protected GeyserItemStack[] items;
 
+    /**
+     * The location of the inventory block. Will either be a fake block above the player's head, or the actual block location
+     */
     @Getter
     @Setter
     protected Vector3i holderPosition = Vector3i.ZERO;
@@ -64,27 +58,29 @@ public class Inventory {
     protected long holderId = -1;
 
     @Getter
-    protected AtomicInteger transactionId = new AtomicInteger(1);
+    protected short transactionId = 0;
 
-    public Inventory(int id, WindowType windowType, int size) {
-        this("Inventory", id, windowType, size);
+    protected Inventory(int id, int size) {
+        this("Inventory", id, size);
     }
 
-    public Inventory(String title, int id, WindowType windowType, int size) {
+    protected Inventory(String title, int id, int size) {
         this.title = title;
         this.id = id;
-        this.windowType = windowType;
         this.size = size;
-        this.items = new ItemStack[size];
+        this.items = new GeyserItemStack[size];
+        Arrays.fill(items, GeyserItemStack.EMPTY);
     }
 
-    public ItemStack getItem(int slot) {
+    public GeyserItemStack getItem(int slot) {
         return items[slot];
     }
 
-    public void setItem(int slot, ItemStack item) {
-        if (item != null && (item.getId() == 0 || item.getAmount() < 1))
-            item = null;
+    public void setItem(int slot, @NonNull GeyserItemStack item) {
         items[slot] = item;
+    }
+
+    public short getNextTransactionId() {
+        return ++transactionId;
     }
 }
