@@ -103,6 +103,7 @@ public class JavaPlayerActionAckTranslator extends PacketTranslator<ServerPlayer
                 ));
                 PlayerInventory inventory = session.getPlayerInventory();
                 GeyserItemStack item = inventory.getItemInHand();
+                double breakTime = Math.ceil(BlockUtils.getBreakTime(blockHardness, packet.getNewState(), itemEntry, nbtData, session) * 20);
                 levelEvent.setData((int) (65535 / breakTime));
                 session.setBreakingBlock(packet.getNewState());
                 session.sendUpstreamPacket(levelEvent);
