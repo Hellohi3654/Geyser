@@ -1,0 +1,61 @@
+# This workflow will build a Java project with Maven
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+name: connector-common
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Build Connector-common with Release'
+        required: true
+        default: 'Build con com'
+      home:
+        description: 'locationf'
+        required: false
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/labeler@v2
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+    - uses: actions/cache@v2
+      with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+    - name: Generate settings.xml for Maven Deploy
+      # You may pin to the exact commit or the version.
+      # uses: whelk-io/maven-settings-xml-action@f2ce02adb757b1118ab14604d2e8bdaafdb9bf92
+      uses: whelk-io/maven-settings-xml-action@v14
+      with:
+        repositories: '[{ "id": "github", "name": "GitHub hellohi3654 Apache Maven Packages", "url": "https://maven.pkg.github.com/hellohi3654/Geyser", "releases": { "enabled": "false" }, "snapshots": { "enabled": "true" } }]'
+        servers: '[{ "id": "github", "username": "hellohi3654", "password": "${{ secrets.PKEY }}" }]'
+        profiles: '[{ "id": "github" }]'
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+        server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
+        settings-path: ${{ github.workspace }} # location for the settings.xml file
+    - name: submodules-init
+      uses: snickerbockers/submodules-init@v4
+
+    - name: purge packages
+      # You may pin to the exact commit or the version.
+      # uses: MobileheadHolding/github-action-purge-packages@16e2ecc0100c7edfd52652eae2bea7c075666150
+      uses: MobileheadHolding/github-action-purge-packages@v2.0.1
+      with:
+        # number of days the package has to be old to be purged
+        days-old: 1
+        # string to be contained in the package name.
+        package-name-query: 1.2
+
+    - name: Build with Maven Deploy
+      run: mvn javadoc:jar source:jar deploy -DskipTests -T 2C

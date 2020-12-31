@@ -1,14 +1,14 @@
-name: Build-Without-Release
+name: Geyser Build No Release
 
 on:
   workflow_dispatch:
     inputs:
       name:
-        description: 'Buildz without Release'
+        description: 'Build without Release'
         required: true
-        default: 'Buildz'
+        default: 'Build'
       home:
-        description: 'locationb'
+        description: 'location'
         required: false
 
 jobs:
