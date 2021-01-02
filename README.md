@@ -1,8 +1,8 @@
-## Warning Do not use master branch it is not tested 
+## Warning Do not use master branch it is not tested and is very outdated
 ## Instead use bundabrg-bleeding Branch VVV
 - (https://github.com/Hellohi3654/Geyser/tree/bundabrg-bleeding)
 
-## I run a server using the bundabrg-bleeding branch
+## I have a server that uses the bundabrg-bleeding branch
 
 - Join the discord if you have any questions or create a issue (https://github.com/Hellohi3654/Geyser/issues)
 - IP and Port for both Java and Bedrock Players VVV
