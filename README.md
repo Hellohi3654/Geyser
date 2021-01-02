@@ -1,9 +1,20 @@
 ## Warning Do not use master branch it is not tested 
-## Instead use Stable or bundabrg-bleeding Branch VVV
+## Instead use bundabrg-bleeding Branch VVV
 - (https://github.com/Hellohi3654/Geyser/tree/bundabrg-bleeding)
-- (https://github.com/Hellohi3654/Geyser/tree/Stable)
 
-## This branch is a combination of many different geyser forks
+## I run a server using the bundabrg-bleeding branch
+
+- Join the discord if you have any questions or create a issue (https://github.com/Hellohi3654/Geyser/issues)
+- IP and Port for both Java and Bedrock Players VVV
+
+- Bedrock:
+- IP: hellohi3654.wither.host
+- Port: 19179
+
+- Java:
+- Server Address: hellohi3654.wither.host:19179
+
+## The bundabrg-bleeding branch is a combination of many different geyser forks / PRs
 - Don't message geyser devs if you find a problem
 - Create a issue on my fork I will try and fix it (https://github.com/Hellohi3654/Geyser/issues)
 - You can either compile this branch yourself or download the lastest release (https://github.com/Hellohi3654/Geyser/releases)
