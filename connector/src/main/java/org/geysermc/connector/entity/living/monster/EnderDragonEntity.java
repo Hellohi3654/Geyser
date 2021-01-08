@@ -27,24 +27,24 @@ package org.geysermc.connector.entity.living.monster;
 
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.EntityMetadata;
 import com.nukkitx.math.vector.Vector3f;
-import com.nukkitx.protocol.bedrock.data.AttributeData;
 import com.nukkitx.protocol.bedrock.data.LevelEventType;
 import com.nukkitx.protocol.bedrock.data.entity.EntityData;
 import com.nukkitx.protocol.bedrock.data.entity.EntityEventType;
 import com.nukkitx.protocol.bedrock.data.entity.EntityFlag;
 import com.nukkitx.protocol.bedrock.packet.*;
 import lombok.Data;
+import org.geysermc.connector.entity.Tickable;
+import org.geysermc.connector.entity.attribute.AttributeType;
 import org.geysermc.connector.entity.living.InsentientEntity;
 import org.geysermc.connector.entity.type.EntityType;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.utils.DimensionUtils;
 
 import java.util.Random;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class EnderDragonEntity extends InsentientEntity {
+public class EnderDragonEntity extends InsentientEntity implements Tickable {
     /**
      * The Ender Dragon has multiple hit boxes, which
      * are each its own invisible entity
@@ -72,15 +72,12 @@ public class EnderDragonEntity extends InsentientEntity {
     private int phaseTicks;
 
     private int ticksTillNextGrowl = 100;
-    private int ticksSinceDeath = 0;
 
     /**
      * Used to determine when the wing flap sound should be played
      */
     private float wingPosition;
     private float lastWingPosition;
-
-    private ScheduledFuture<?> entityTick;
 
     public EnderDragonEntity(long entityId, long geyserId, EntityType entityType, Vector3f position, Vector3f motion, Vector3f rotation) {
         super(entityId, geyserId, entityType, position, motion, rotation);
@@ -91,13 +88,12 @@ public class EnderDragonEntity extends InsentientEntity {
 
     @Override
     public void updateBedrockMetadata(EntityMetadata entityMetadata, GeyserSession session) {
-        // Phase
-        if (entityMetadata.getId() == 15) {
+        if (entityMetadata.getId() == 15) { // Phase
             phase = (int) entityMetadata.getValue();
-            if (phase == 5) {
-                // Performing breath attack
+            if (phase == 9) {
+                // Dying phase
                 EntityEventPacket entityEventPacket = new EntityEventPacket();
-                entityEventPacket.setType(EntityEventType.DRAGON_FLAMING);
+                entityEventPacket.setType(EntityEventType.ENDER_DRAGON_DEATH);
                 entityEventPacket.setRuntimeEntityId(geyserId);
                 entityEventPacket.setData(0);
                 session.sendUpstreamPacket(entityEventPacket);
@@ -112,35 +108,29 @@ public class EnderDragonEntity extends InsentientEntity {
             phaseTicks = 0;
             metadata.getFlags().setFlag(EntityFlag.SITTING, isSitting());
         }
+
         super.updateBedrockMetadata(entityMetadata, session);
+
+        if (entityMetadata.getId() == 8) { // Health
+            // Update the health attribute, so that the death animation gets played
+            attributes.put(AttributeType.HEALTH, AttributeType.HEALTH.getAttribute(metadata.getFloat(EntityData.HEALTH), 200));
+            updateBedrockAttributes(session);
+        }
     }
 
     @Override
     public void spawnEntity(GeyserSession session) {
-        AddEntityPacket addEntityPacket = new AddEntityPacket();
-        addEntityPacket.setIdentifier("minecraft:" + entityType.name().toLowerCase());
-        addEntityPacket.setRuntimeEntityId(geyserId);
-        addEntityPacket.setUniqueEntityId(geyserId);
-        addEntityPacket.setPosition(position);
-        addEntityPacket.setMotion(motion);
-        addEntityPacket.setRotation(getBedrockRotation());
-        addEntityPacket.setEntityType(entityType.getType());
-        addEntityPacket.getMetadata().putAll(metadata);
+        super.spawnEntity(session);
 
-        // Otherwise dragon is always 'dying'
-        addEntityPacket.getAttributes().add(new AttributeData("minecraft:health", 0.0f, 200f, 200f, 200f));
-
-        valid = true;
-        session.sendUpstreamPacket(addEntityPacket);
-
-        head = new EnderDragonPartEntity(entityId + 1, session.getEntityCache().getNextEntityId().incrementAndGet(), EntityType.ENDER_DRAGON_PART, position, motion, rotation, 1, 1);
-        neck = new EnderDragonPartEntity(entityId + 2, session.getEntityCache().getNextEntityId().incrementAndGet(), EntityType.ENDER_DRAGON_PART, position, motion, rotation, 3, 3);
-        body = new EnderDragonPartEntity(entityId + 3, session.getEntityCache().getNextEntityId().incrementAndGet(), EntityType.ENDER_DRAGON_PART, position, motion, rotation, 5, 3);
-        leftWing = new EnderDragonPartEntity(entityId + 4, session.getEntityCache().getNextEntityId().incrementAndGet(), EntityType.ENDER_DRAGON_PART, position, motion, rotation, 4, 2);
-        rightWing = new EnderDragonPartEntity(entityId + 5, session.getEntityCache().getNextEntityId().incrementAndGet(), EntityType.ENDER_DRAGON_PART, position, motion, rotation, 4, 2);
+        AtomicLong nextEntityId = session.getEntityCache().getNextEntityId();
+        head = new EnderDragonPartEntity(entityId + 1, nextEntityId.incrementAndGet(), EntityType.ENDER_DRAGON_PART, 1, 1);
+        neck = new EnderDragonPartEntity(entityId + 2, nextEntityId.incrementAndGet(), EntityType.ENDER_DRAGON_PART, 3, 3);
+        body = new EnderDragonPartEntity(entityId + 3, nextEntityId.incrementAndGet(), EntityType.ENDER_DRAGON_PART, 5, 3);
+        leftWing = new EnderDragonPartEntity(entityId + 4, nextEntityId.incrementAndGet(), EntityType.ENDER_DRAGON_PART, 4, 2);
+        rightWing = new EnderDragonPartEntity(entityId + 5, nextEntityId.incrementAndGet(), EntityType.ENDER_DRAGON_PART, 4, 2);
         tail = new EnderDragonPartEntity[3];
         for (int i = 0; i < 3; i++) {
-            tail[i] = new EnderDragonPartEntity(entityId + 6 + i, session.getEntityCache().getNextEntityId().incrementAndGet(), EntityType.ENDER_DRAGON_PART, position, motion, rotation, 2, 2);
+            tail[i] = new EnderDragonPartEntity(entityId + 6 + i, nextEntityId.incrementAndGet(), EntityType.ENDER_DRAGON_PART, 2, 2);
         }
 
         allParts = new EnderDragonPartEntity[]{head, neck, body, leftWing, rightWing, tail[0], tail[1], tail[2]};
@@ -154,30 +144,23 @@ public class EnderDragonEntity extends InsentientEntity {
             segmentHistory[i].yaw = rotation.getZ();
             segmentHistory[i].y = position.getY();
         }
-
-        entityTick = session.getConnector().getGeneralThreadPool().scheduleAtFixedRate(() -> {
-            if (session.isClosed()) {
-                entityTick.cancel(false);
-                return;
-            }
-            effectTick(session);
-            if (!metadata.getFlags().getFlag(EntityFlag.NO_AI) && !isDead()) {
-                pushSegment();
-                updateBoundingBoxes(session);
-            }
-        }, 50, 50, TimeUnit.MILLISECONDS);
-
-        session.getConnector().getLogger().debug("Spawned entity " + entityType + " at location " + position + " with id " + geyserId + " (java id " + entityId + ")");
     }
 
     @Override
     public boolean despawnEntity(GeyserSession session) {
-        entityTick.cancel(false);
-
         for (EnderDragonPartEntity part : allParts) {
             part.despawnEntity(session);
         }
         return super.despawnEntity(session);
+    }
+
+    @Override
+    public void tick(GeyserSession session) {
+        effectTick(session);
+        if (!metadata.getFlags().getFlag(EntityFlag.NO_AI) && isAlive()) {
+            pushSegment();
+            updateBoundingBoxes(session);
+        }
     }
 
     /**
@@ -248,16 +231,7 @@ public class EnderDragonEntity extends InsentientEntity {
 
             lastWingPosition = wingPosition;
         }
-        if (isDead()) {
-            // The dragon is dying
-            ticksSinceDeath++;
-            if (ticksSinceDeath % 10 == 0) {
-                sendExplosionParticle(session, false);
-            }
-            if (180 <= ticksSinceDeath && ticksSinceDeath <= 200) {
-                sendExplosionParticle(session, true);
-            }
-        } else {
+        if (isAlive()) {
             if (metadata.getFlags().getFlag(EntityFlag.NO_AI)) {
                 wingPosition = 0.5f;
             } else if (isHovering() || isSitting()) {
@@ -272,15 +246,17 @@ public class EnderDragonEntity extends InsentientEntity {
             } else if (phase == 5) { // Sitting Flaming Phase
                 phaseTicks++;
                 if (phaseTicks % 2 == 0 && phaseTicks < 10) {
-                    sendDragonBreathEffect(session);
+                    metadata.putLong(EntityData.TARGET_EID, head.getGeyserId());
+                    updateBedrockMetadata(session);
+                    // Performing breath attack
+                    EntityEventPacket entityEventPacket = new EntityEventPacket();
+                    entityEventPacket.setType(EntityEventType.DRAGON_FLAMING);
+                    entityEventPacket.setRuntimeEntityId(geyserId);
+                    entityEventPacket.setData(0);
+                    session.sendUpstreamPacket(entityEventPacket);
                 }
             } else if (phase == 7) { // Sitting Attacking Phase
                 playGrowlSound(session);
-            } else if (phase == 9) { // Dying Phase
-                if (phaseTicks % 10 == 0) {
-                    sendExplosionParticle(session, true);
-                }
-                phaseTicks++;
             }
         }
     }
@@ -310,28 +286,8 @@ public class EnderDragonEntity extends InsentientEntity {
         session.sendUpstreamPacket(playSoundPacket);
     }
 
-    private void sendExplosionParticle(GeyserSession session, boolean emitter) {
-        Random random = ThreadLocalRandom.current();
-        float xOffset = 8f * (random.nextFloat() - 0.5f);
-        float yOffset = 4f * (random.nextFloat() - 0.5f) + 2f;
-        float zOffset = 8f * (random.nextFloat() - 0.5f);
-
-        if (emitter) {
-            SpawnParticleEffectPacket stringPacket = new SpawnParticleEffectPacket();
-            stringPacket.setIdentifier("minecraft:huge_explosion_emitter");
-            stringPacket.setDimensionId(DimensionUtils.javaToBedrock(session.getDimension()));
-            stringPacket.setPosition(position.add(xOffset, yOffset, zOffset));
-            session.sendUpstreamPacket(stringPacket);
-        } else {
-            LevelEventPacket particlePacket = new LevelEventPacket();
-            particlePacket.setType(LevelEventType.PARTICLE_EXPLOSION);
-            particlePacket.setPosition(position.add(xOffset, yOffset, zOffset));
-            session.sendUpstreamPacket(particlePacket);
-        }
-    }
-
-    private boolean isDead() {
-        return metadata.getFloat(EntityData.HEALTH) <= 0;
+    private boolean isAlive() {
+        return metadata.getFloat(EntityData.HEALTH) > 0;
     }
 
     private boolean isHovering() {

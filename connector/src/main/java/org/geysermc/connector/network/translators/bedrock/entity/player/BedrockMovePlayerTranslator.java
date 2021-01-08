@@ -70,9 +70,7 @@ public class BedrockMovePlayerTranslator extends PacketTranslator<MovePlayerPack
             return;
         }
 
-        if (session.getMovementSendIfIdle() != null) {
-            session.getMovementSendIfIdle().cancel(true);
-        }
+        session.setLastMovementTimestamp(System.currentTimeMillis());
 
         // Send book update before the player moves
         session.getBookEditCache().checkForSend();
@@ -96,7 +94,7 @@ public class BedrockMovePlayerTranslator extends PacketTranslator<MovePlayerPack
 
                 session.sendDownstreamPacket(playerRotationPacket);
             } else {
-                Vector3d position = adjustBedrockPosition(session, packet.getPosition(), packet.isOnGround());
+                Vector3d position = session.getCollisionManager().adjustBedrockPosition(packet.getPosition(), packet.isOnGround());
                 if (position != null) { // A null return value cancels the packet
                     if (isValidMove(session, packet.getMode(), entity.getPosition(), packet.getPosition())) {
                         Packet movePacket;
@@ -138,7 +136,7 @@ public class BedrockMovePlayerTranslator extends PacketTranslator<MovePlayerPack
                     } else {
                         // Not a valid move
                         session.getConnector().getLogger().debug("Recalculating position...");
-                        recalculatePosition(session);
+                        session.getCollisionManager().recalculatePosition();
                     }
                 }
             }
@@ -151,13 +149,9 @@ public class BedrockMovePlayerTranslator extends PacketTranslator<MovePlayerPack
         if (entity.getRightParrot() != null) {
             entity.getRightParrot().moveAbsolute(session, entity.getPosition(), entity.getRotation(), true, false);
         }
-
-        // Schedule a position send loop if the player is idle
-        session.setMovementSendIfIdle(session.getConnector().getGeneralThreadPool().schedule(() -> sendPositionIfIdle(session),
-                3, TimeUnit.SECONDS));
     }
 
-    public boolean isValidMove(GeyserSession session, MovePlayerPacket.Mode mode, Vector3f currentPosition, Vector3f newPosition) {
+    private boolean isValidMove(GeyserSession session, MovePlayerPacket.Mode mode, Vector3f currentPosition, Vector3f newPosition) {
         if (mode != MovePlayerPacket.Mode.NORMAL)
             return true;
 
@@ -286,4 +280,3 @@ public class BedrockMovePlayerTranslator extends PacketTranslator<MovePlayerPack
                 3, TimeUnit.SECONDS));
     }
 }
-
