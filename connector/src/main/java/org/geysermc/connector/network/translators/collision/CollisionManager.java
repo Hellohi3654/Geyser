@@ -69,6 +69,10 @@ public class CollisionManager {
      * This check doesn't allow players right up against the block, so they must be pushed slightly away.
      */
     public static final double COLLISION_TOLERANCE = 0.00001;
+    /**
+     * Trims Y coordinates when jumping to prevent rounding issues being sent to the server.
+     */
+    private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.#####");
 
     public CollisionManager(GeyserSession session) {
         this.session = session;
@@ -151,8 +155,7 @@ public class CollisionManager {
 
             if (!onGround) {
                 // Trim the position to prevent rounding errors that make Java think we are clipping into a block
-                DecimalFormat format = new DecimalFormat("#.#####");
-                position = Vector3d.from(position.getX(), Double.parseDouble(format.format(position.getY())), position.getZ());
+                position = Vector3d.from(position.getX(), Double.parseDouble(DECIMAL_FORMAT.format(position.getY())), position.getZ());
             }
         } else {
             // When chunk caching is off, we have to rely on this
