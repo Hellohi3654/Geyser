@@ -47,6 +47,11 @@ import org.geysermc.connector.network.translators.item.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Used to send all valid recipes from Java to Bedrock.
+ *
+ * Bedrock REQUIRES a CraftingDataPacket to be sent in order to craft anything.
+ */
 @Translator(packet = ServerDeclareRecipesPacket.class)
 public class JavaDeclareRecipesTranslator extends PacketTranslator<ServerDeclareRecipesPacket> {
 
@@ -54,7 +59,7 @@ public class JavaDeclareRecipesTranslator extends PacketTranslator<ServerDeclare
     public void translate(ServerDeclareRecipesPacket packet, GeyserSession session) {
         // Get the last known network ID (first used for the pregenerated recipes) and increment from there.
         int netId = RecipeRegistry.LAST_RECIPE_NET_ID + 1;
-        Int2ObjectMap<Recipe> recipeMap = new Int2ObjectOpenHashMap<>();
+        Int2ObjectMap<Recipe> recipeMap = new Int2ObjectOpenHashMap<>(RecipeRegistry.ALL_CRAFTING_RECIPES);
         Int2ObjectMap<List<StoneCuttingRecipeData>> unsortedStonecutterData = new Int2ObjectOpenHashMap<>();
         CraftingDataPacket craftingDataPacket = new CraftingDataPacket();
         craftingDataPacket.setCleanRecipes(true);
