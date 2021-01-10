@@ -152,7 +152,6 @@ public class GeyserConnector {
         CollisionTranslator.init();
         LocaleUtils.init();
         PotionMixRegistry.init();
-        RecipeRegistry.init();
         SoundRegistry.init();
         SoundHandlerRegistry.init();
 
