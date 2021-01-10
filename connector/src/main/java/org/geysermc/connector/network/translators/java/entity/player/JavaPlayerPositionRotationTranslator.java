@@ -47,7 +47,6 @@ public class JavaPlayerPositionRotationTranslator extends PacketTranslator<Serve
 
     @Override
     public void translate(ServerPlayerPositionRotationPacket packet, GeyserSession session) {
-
         if (!session.isLoggedIn())
             return;
 

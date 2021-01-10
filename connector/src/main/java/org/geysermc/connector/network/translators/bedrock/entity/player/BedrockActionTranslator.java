@@ -60,8 +60,11 @@ public class BedrockActionTranslator extends PacketTranslator<PlayerActionPacket
     @Override
     public void translate(PlayerActionPacket packet, GeyserSession session) {
         Entity entity = session.getPlayerEntity();
-        if (entity == null)
-            return;
+
+        // Send book update before any player action
+        if (packet.getAction() != PlayerActionPacket.Action.RESPAWN) {
+            session.getBookEditCache().checkForSend();
+        }
 
         Vector3i vector = packet.getBlockPosition();
         Position position = new Position(vector.getX(), vector.getY(), vector.getZ());
@@ -82,6 +85,7 @@ public class BedrockActionTranslator extends PacketTranslator<PlayerActionPacket
                 session.sendDownstreamPacket(startSwimPacket);
                 break;
             case STOP_SWIMMING:
+                // TODO make this better and only stop sprinting if the player is stopping in water - otherwise the sprint continues
                 ClientPlayerStatePacket stopSwimPacket = new ClientPlayerStatePacket((int) entity.getEntityId(), PlayerState.STOP_SPRINTING);
                 session.sendDownstreamPacket(stopSwimPacket);
                 break;

@@ -1,14 +1,25 @@
-## Warning Do not use master branch it is not tested 
-## Instead use Stable or bundabrg-bleeding Branch VVV
+## Warning Do not use master branch it is not tested and is very outdated
+## Instead use bundabrg-bleeding Branch VVV
 - (https://github.com/Hellohi3654/Geyser/tree/bundabrg-bleeding)
-- (https://github.com/Hellohi3654/Geyser/tree/Stable)
 
-## This branch is a combination of many different geyser forks
+## I have a server that uses the bundabrg-bleeding branch
+
+- Join the discord if you have any questions or create a issue (https://github.com/Hellohi3654/Geyser/issues)
+- IP and Port for both Java and Bedrock Players VVV
+
+- Bedrock:
+- IP: hellohi3654.wither.host
+- Port: 19179
+
+- Java:
+- Server Address: hellohi3654.wither.host:19179
+
+## The bundabrg-bleeding branch is a combination of many different geyser forks / PRs
 - Don't message geyser devs if you find a problem
 - Create a issue on my fork I will try and fix it (https://github.com/Hellohi3654/Geyser/issues)
 - You can either compile this branch yourself or download the lastest release (https://github.com/Hellohi3654/Geyser/releases)
 - Here's a list of features this branch includes:
-* [Block Breaking Refactors](https://github.com/GeyserMC/Geyser/pull/1336)
+* [Allow for crawling and moving in one-block spaces where possible](https://github.com/GeyserMC/Geyser/pull/1814)
 * [Smooth Pistons](https://github.com/GeyserMC/Geyser/pull/1542)
 * [Replace Spaces in Usernames with Underscores](https://github.com/GeyserMC/Geyser/pull/264)
 * [Improve Playerlist](https://github.com/GeyserMC/Geyser/pull/711)
@@ -36,7 +47,7 @@ The ultimate goal of this project is to allow Minecraft: Bedrock Edition users t
 
 Special thanks to the DragonProxy project for being a trailblazer in protocol translation and for all the team members who have now joined us here!
 
-### Currently supporting Minecraft Bedrock v1.16.100/v1.16.101/v1.16.200 and Minecraft Java v1.16.4.
+### Currently supporting Minecraft Bedrock v1.16.100 - v1.16.201 and Minecraft Java v1.16.4.
 
 ## Setting Up
 Take a look [here](https://github.com/GeyserMC/Geyser/wiki#Setup) for how to set up Geyser.

@@ -31,11 +31,13 @@ import com.github.steveice10.mc.auth.exception.request.RequestException;
 import com.github.steveice10.mc.protocol.MinecraftConstants;
 import com.github.steveice10.mc.protocol.MinecraftProtocol;
 import com.github.steveice10.mc.protocol.data.SubProtocol;
+import com.github.steveice10.mc.protocol.data.game.entity.metadata.Pose;
 import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
 import com.github.steveice10.mc.protocol.data.game.recipe.Recipe;
 import com.github.steveice10.mc.protocol.data.game.statistic.Statistic;
 import com.github.steveice10.mc.protocol.data.game.window.VillagerTrade;
 import com.github.steveice10.mc.protocol.packet.handshake.client.HandshakePacket;
+import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerPositionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerPositionRotationPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.ClientPluginMessagePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.world.ClientTeleportConfirmPacket;
@@ -51,6 +53,7 @@ import com.nukkitx.protocol.bedrock.BedrockPacket;
 import com.nukkitx.protocol.bedrock.BedrockServerSession;
 import com.nukkitx.protocol.bedrock.data.*;
 import com.nukkitx.protocol.bedrock.data.command.CommandPermission;
+import com.nukkitx.protocol.bedrock.data.entity.EntityFlag;
 import com.nukkitx.protocol.bedrock.packet.*;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -69,9 +72,12 @@ import lombok.Setter;
 import org.geysermc.common.window.CustomFormWindow;
 import org.geysermc.common.window.FormWindow;
 import org.geysermc.connector.GeyserConnector;
+import org.geysermc.connector.entity.Tickable;
 import org.geysermc.connector.command.CommandSender;
 import org.geysermc.connector.common.AuthType;
 import org.geysermc.connector.entity.Entity;
+import org.geysermc.connector.entity.attribute.Attribute;
+import org.geysermc.connector.entity.attribute.AttributeType;
 import org.geysermc.connector.entity.player.SessionPlayerEntity;
 import org.geysermc.connector.entity.player.SkullPlayerEntity;
 import org.geysermc.connector.event.EventManager;
@@ -128,6 +134,7 @@ public class GeyserSession implements CommandSender {
 
     private final SessionPlayerEntity playerEntity;
 
+    private BookEditCache bookEditCache;
     private ChunkCache chunkCache;
     private EntityCache entityCache;
     private EntityEffectCache effectCache;
@@ -200,11 +207,33 @@ public class GeyserSession implements CommandSender {
 
     private boolean sneaking;
 
+    /**
+     * Stores the pose that the server believes the player currently has.
+     */
+    @Setter
+    private Pose pose = Pose.STANDING;
+
     @Setter
     private boolean sprinting;
 
     @Setter
     private boolean jumping;
+
+    /**
+     * Whether the player is swimming in water.
+     * Used to update speed when crawling.
+     */
+    @Setter
+    private boolean swimmingInWater;
+
+    /**
+     * Tracks the original speed attribute.
+     *
+     * We need to do this in order to emulate speeds when sneaking under 1.5-blocks-tall areas if the player isn't sneaking,
+     * and when crawling.
+     */
+    @Setter
+    private float originalSpeedAttribute;
 
     /**
      * The dimension of the player.
@@ -294,10 +323,10 @@ public class GeyserSession implements CommandSender {
     private ScheduledFuture<?> bucketScheduledFuture;
 
     /**
-     * Sends a movement packet every three seconds if the player hasn't moved. Prevents timeouts when AFK in certain instances.
+     * Used to send a movement packet every three seconds if the player hasn't moved. Prevents timeouts when AFK in certain instances.
      */
     @Setter
-    private ScheduledFuture<?> movementSendIfIdle;
+    private long lastMovementTimestamp = System.currentTimeMillis();
 
     /**
      * Controls whether the daylight cycle gamerule has been sent to the client, so the sun/moon remain motionless.
@@ -377,6 +406,10 @@ public class GeyserSession implements CommandSender {
     private List<UUID> selectedEmotes = new ArrayList<>();
     private final Set<UUID> emotes = new HashSet<>();
 
+    /**
+     * The thread that will run every 50 milliseconds - one Minecraft tick.
+     */
+    private ScheduledFuture<?> tickThread = null;
     private MinecraftProtocol protocol;
 
     public GeyserSession(GeyserConnector connector, BedrockServerSession bedrockServerSession) {
@@ -401,6 +434,7 @@ public class GeyserSession implements CommandSender {
         this.inventoryFuture = CompletableFuture.completedFuture(null);
         this.craftingRecipes = new Int2ObjectOpenHashMap<>();
         this.unlockedRecipes = new ObjectOpenHashSet<>();
+        collisionManager.updatePlayerBoundingBox(this.playerEntity.getPosition());
 
         this.spawned = false;
         this.loggedIn = false;
@@ -527,6 +561,9 @@ public class GeyserSession implements CommandSender {
                 if (publicKey != null) {
                     connector.getLogger().info(LanguageUtils.getLocaleStringLog("geyser.auth.floodgate.loaded_key"));
                 }
+
+                // Start ticking
+                tickThread = connector.getGeneralThreadPool().scheduleAtFixedRate(this::tick, 50, 50, TimeUnit.MILLISECONDS);
 
                 downstream = new Client(remoteServer.getAddress(), remoteServer.getPort(), protocol, new TcpSessionFactory());
                 if (connector.getConfig().getRemote().isUseProxyProtocol()) {
@@ -668,6 +705,10 @@ public class GeyserSession implements CommandSender {
             }
         }
 
+        if (tickThread != null) {
+            tickThread.cancel(true);
+        }
+
         this.chunkCache = null;
         this.entityCache = null;
         this.effectCache = null;
@@ -681,6 +722,29 @@ public class GeyserSession implements CommandSender {
         disconnect(LanguageUtils.getPlayerLocaleString("geyser.network.close", getClientData().getLanguageCode()));
     }
 
+    /**
+     * Called every 50 milliseconds - one Minecraft tick.
+     */
+    public void tick() {
+        pistonCache.tick(this);
+        // Check to see if the player's position needs updating - a position update should be sent once every 3 seconds
+        if (spawned && (System.currentTimeMillis() - lastMovementTimestamp) > 3000) {
+            // Recalculate in case something else changed position
+            Vector3d position = collisionManager.adjustBedrockPosition(playerEntity.getPosition(), playerEntity.isOnGround());
+            // A null return value cancels the packet
+            if (position != null) {
+                ClientPlayerPositionPacket packet = new ClientPlayerPositionPacket(playerEntity.isOnGround(),
+                        position.getX(), position.getY(), position.getZ());
+                sendDownstreamPacket(packet);
+            }
+            lastMovementTimestamp = System.currentTimeMillis();
+        }
+
+        for (Tickable entity : entityCache.getTickableEntities()) {
+            entity.tick(this);
+        }
+    }
+
     public void setAuthenticationData(AuthData authData) {
         this.authData = authData;
     }
@@ -689,6 +753,28 @@ public class GeyserSession implements CommandSender {
         this.sneaking = sneaking;
         collisionManager.updatePlayerBoundingBox();
         collisionManager.updateScaffoldingFlags();
+    }
+
+    /**
+     * Adjusts speed if the player should be sneaking, or if the player is crawling.
+     *
+     * @return true if attributes should be updated.
+     */
+    public boolean adjustSpeed() {
+        Attribute currentPlayerSpeed = playerEntity.getAttributes().get(AttributeType.MOVEMENT_SPEED);
+        if (currentPlayerSpeed != null) {
+            if ((pose.equals(Pose.SNEAKING) && !sneaking && collisionManager.isUnderSlab()) ||
+                    (!swimmingInWater && playerEntity.getMetadata().getFlags().getFlag(EntityFlag.SWIMMING) && !collisionManager.isPlayerInWater())) {
+                // Either of those conditions means that Bedrock goes zoom when they shouldn't be
+                currentPlayerSpeed.setValue(originalSpeedAttribute / 3.32f);
+                return true;
+            } else if (originalSpeedAttribute != currentPlayerSpeed.getValue()) {
+                // Speed has reset to normal
+                currentPlayerSpeed.setValue(originalSpeedAttribute);
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

@@ -28,13 +28,22 @@ package org.geysermc.connector.network.translators.collision;
 import com.nukkitx.math.vector.Vector3d;
 import com.nukkitx.math.vector.Vector3f;
 import com.nukkitx.math.vector.Vector3i;
+import com.nukkitx.protocol.bedrock.data.entity.EntityData;
 import com.nukkitx.protocol.bedrock.data.entity.EntityFlag;
 import com.nukkitx.protocol.bedrock.data.entity.EntityFlags;
+import com.nukkitx.protocol.bedrock.packet.MoveEntityAbsolutePacket;
+import com.nukkitx.protocol.bedrock.packet.MovePlayerPacket;
+import com.nukkitx.protocol.bedrock.packet.SetEntityDataPacket;
+import com.nukkitx.protocol.bedrock.packet.SetEntityMotionPacket;
 import lombok.Getter;
 import lombok.Setter;
+import org.geysermc.connector.entity.player.PlayerEntity;
+import org.geysermc.connector.entity.type.EntityType;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.collision.translators.BlockCollision;
+import org.geysermc.connector.network.translators.world.block.BlockTranslator;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,6 +71,10 @@ public class CollisionManager {
      * This check doesn't allow players right up against the block, so they must be pushed slightly away.
      */
     public static final double COLLISION_TOLERANCE = 0.00001;
+    /**
+     * Trims Y coordinates when jumping to prevent rounding issues being sent to the server.
+     */
+    private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.#####");
 
     public CollisionManager(GeyserSession session) {
         this.session = session;
@@ -100,17 +113,84 @@ public class CollisionManager {
             } else {
                 playerPosition = session.getPlayerEntity().getPosition();
             }
-            playerBoundingBox = new BoundingBox(playerPosition.getX(), playerPosition.getY() + 0.9, playerPosition.getZ(), 0.6, 1.8, 0.6);
+            playerBoundingBox = new BoundingBox(playerPosition.getX(), playerPosition.getY() + 0.9, playerPosition.getZ(),
+                    EntityType.PLAYER.getWidth(), EntityType.PLAYER.getHeight(), EntityType.PLAYER.getLength());
         } else {
             // According to the Minecraft Wiki, when sneaking:
             // - In Bedrock Edition, the height becomes 1.65 blocks, allowing movement through spaces as small as 1.75 (2 - 1⁄4) blocks high.
             // - In Java Edition, the height becomes 1.5 blocks.
-            if (session.isSneaking()) {
-                playerBoundingBox.setSizeY(1.5);
-            } else {
-                playerBoundingBox.setSizeY(1.8);
-            }
+            // Other instances have the player's bounding box become as small as 0.6 or 0.2.
+            playerBoundingBox.setSizeY(session.getPlayerEntity().getMetadata().getFloat(EntityData.BOUNDING_BOX_HEIGHT));
         }
+    }
+
+    /**
+     * Adjust the Bedrock position before sending to the Java server to account for inaccuracies in movement between
+     * the two versions.
+     *
+     * @param bedrockPosition the current Bedrock position of the client
+     * @param onGround whether the Bedrock player is on the ground
+     * @return the position to send to the Java server, or null to cancel sending the packet
+     */
+    public Vector3d adjustBedrockPosition(Vector3f bedrockPosition, boolean onGround) {
+        // We need to parse the float as a string since casting a float to a double causes us to
+        // lose precision and thus, causes players to get stuck when walking near walls
+        double javaY = bedrockPosition.getY() - EntityType.PLAYER.getOffset();
+
+        Vector3d position = Vector3d.from(Double.parseDouble(Float.toString(bedrockPosition.getX())), javaY,
+                Double.parseDouble(Float.toString(bedrockPosition.getZ())));
+
+        if (session.getConnector().getConfig().isCacheChunks()) {
+            if (session.getPistonCache().shouldCancelMovement()) {
+                recalculatePosition();
+                return null;
+            }
+
+            // With chunk caching, we can do some proper collision checks
+            updatePlayerBoundingBox(position);
+
+            // Correct player position
+            if (!correctPlayerPosition()) {
+                // Cancel the movement if it needs to be cancelled
+                recalculatePosition();
+                return null;
+            }
+
+            position = Vector3d.from(playerBoundingBox.getMiddleX(),
+                    playerBoundingBox.getMiddleY() - (playerBoundingBox.getSizeY() / 2),
+                    playerBoundingBox.getMiddleZ());
+
+            if (!onGround) {
+                // Trim the position to prevent rounding errors that make Java think we are clipping into a block
+                position = Vector3d.from(position.getX(), Double.parseDouble(DECIMAL_FORMAT.format(position.getY())), position.getZ());
+            }
+        } else {
+            // When chunk caching is off, we have to rely on this
+            // It rounds the Y position up to the nearest 0.5
+            // This snaps players to snap to the top of stairs and slabs like on Java Edition
+            // However, it causes issues such as the player floating on carpets
+            if (onGround) javaY = Math.ceil(javaY * 2) / 2;
+            position = position.up(javaY - position.getY());
+        }
+
+        return position;
+    }
+
+    // TODO: This makes the player look upwards for some reason, rotation values must be wrong
+    public void recalculatePosition() {
+        PlayerEntity entity = session.getPlayerEntity();
+        // Gravity might need to be reset...
+        SetEntityDataPacket entityDataPacket = new SetEntityDataPacket();
+        entityDataPacket.setRuntimeEntityId(entity.getGeyserId());
+        entityDataPacket.getMetadata().putAll(entity.getMetadata());
+        session.sendUpstreamPacket(entityDataPacket);
+
+        MovePlayerPacket movePlayerPacket = new MovePlayerPacket();
+        movePlayerPacket.setRuntimeEntityId(entity.getGeyserId());
+        movePlayerPacket.setPosition(entity.getPosition());
+        movePlayerPacket.setRotation(entity.getBedrockRotation());
+        movePlayerPacket.setMode(MovePlayerPacket.Mode.NORMAL);
+        session.sendUpstreamPacket(movePlayerPacket);
     }
 
     public List<Vector3i> getPlayerCollidableBlocks() {
@@ -181,6 +261,36 @@ public class CollisionManager {
         updateScaffoldingFlags();
 
         return true;
+    }
+
+    /**
+     * @return true if the block located at the player's floor position plus 1 would intersect with the player,
+     * were they not sneaking
+     */
+    public boolean isUnderSlab() {
+        if (!session.getConnector().getConfig().isCacheChunks()) {
+            // We can't reliably determine this
+            return false;
+        }
+        Vector3i position = session.getPlayerEntity().getPosition().toInt();
+        BlockCollision collision = CollisionTranslator.getCollisionAt(session, position.getX(), position.getY(), position.getZ());
+        if (collision != null) {
+            // Determine, if the player's bounding box *were* at full height, if it would intersect with the block
+            // at the current location.
+            playerBoundingBox.setSizeY(EntityType.PLAYER.getHeight());
+            boolean result = collision.checkIntersection(playerBoundingBox);
+            playerBoundingBox.setSizeY(session.getPlayerEntity().getMetadata().getFloat(EntityData.BOUNDING_BOX_HEIGHT));
+            return result;
+        }
+        return false;
+    }
+
+    /**
+     * @return if the player is currently in a water block
+     */
+    public boolean isPlayerInWater() {
+        return session.getConnector().getConfig().isCacheChunks()
+                && session.getConnector().getWorldManager().getBlockAt(session, session.getPlayerEntity().getPosition().toInt()) == BlockTranslator.JAVA_WATER_ID;
     }
 
     /**
