@@ -176,7 +176,7 @@ public class RecipeRegistry {
      */
     private static CraftingData getCraftingDataFromJsonNode(JsonNode node) {
         int netId = LAST_RECIPE_NET_ID++;
-        int type = node.get("bedrockRecipeType").asInit();
+        int type = node.get("bedrockRecipeType").asInt();
         JsonNode outputNode = node.get("output");
         ItemEntry outputEntry = ItemRegistry.getItemEntry(outputNode.get("identifier").asText());
         ItemData output = getBedrockItemFromIdentifierJson(outputEntry, outputNode);
