@@ -134,7 +134,6 @@ public class GeyserSession implements CommandSender {
 
     private final SessionPlayerEntity playerEntity;
 
-    private BookEditCache bookEditCache;
     private ChunkCache chunkCache;
     private EntityCache entityCache;
     private EntityEffectCache effectCache;
