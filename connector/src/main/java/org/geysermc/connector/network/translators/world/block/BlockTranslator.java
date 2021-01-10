@@ -99,11 +99,9 @@ public class BlockTranslator {
      */
     public static int BEDROCK_RUNTIME_MOVING_BLOCK_ID;
 
-    /** 
-	 * For block breaking animation math
+    /**
      * A list of all Java runtime wool IDs, for use with block breaking math and shears
      */
-	
     public static final IntSet JAVA_RUNTIME_WOOL_IDS = new IntOpenHashSet();
     public static final int JAVA_RUNTIME_COBWEB_ID;
 
@@ -219,7 +217,7 @@ public class BlockTranslator {
             JsonNode hasBlockEntityNode = entry.getValue().get("has_block_entity");
             if (hasBlockEntityNode != null) {
                 JAVA_RUNTIME_ID_TO_HAS_BLOCK_ENTITY.put(javaRuntimeId, hasBlockEntityNode.booleanValue());
-			}
+            }
 
             JsonNode pickItemNode = entry.getValue().get("pick_item");
             if (pickItemNode != null) {

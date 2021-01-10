@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 GeyserMC. http://geysermc.org
+ * Copyright (c) 2019-2021 GeyserMC. http://geysermc.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,22 +29,20 @@ import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlaye
 import com.nukkitx.math.vector.Vector3d;
 import com.nukkitx.math.vector.Vector3f;
 import com.nukkitx.math.vector.Vector3i;
-import com.nukkitx.protocol.bedrock.packet.MoveEntityAbsolutePacket;
 import com.nukkitx.protocol.bedrock.packet.SetEntityMotionPacket;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import lombok.Getter;
 import lombok.Setter;
+import org.geysermc.connector.entity.Tickable;
 import org.geysermc.connector.entity.player.SessionPlayerEntity;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.collision.CollisionManager;
 import org.geysermc.connector.network.translators.world.block.entity.PistonBlockEntity;
 
 import java.util.Map;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
-public class PistonCache {
+public class PistonCache implements Tickable {
     private final GeyserSession session;
 
     private final Map<Vector3i, PistonBlockEntity> pistons = Object2ObjectMaps.synchronize(new Object2ObjectOpenHashMap<>());
@@ -56,55 +54,57 @@ public class PistonCache {
 
     /**
      * Stores whether a player has/will collide with any moving blocks.
+     * This is used to cancel movement from Bedrock that pushes players
+     * out of collision.
      */
     @Getter @Setter
     private boolean playerCollided = false;
 
-    private ScheduledFuture<?> updater;
+    /**
+     * Stores whether a player has/will collide with any slime blocks.
+     * This is used to prevent movement from being canceled when players
+     * are about to hit a slime block.
+     */
+    @Getter @Setter
+    private boolean playerSlimeCollision = false;
 
     public PistonCache(GeyserSession session) {
         this.session = session;
     }
 
-    public void update() {
+    @Override
+    public void tick(GeyserSession session) {
         resetPlayerMovement();
-
-        if (session.isClosed()) {
-            updater.cancel(false);
-            return;
-        }
-
-        pistons.values().forEach(PistonBlockEntity::update);
-        pistons.entrySet().removeIf((entry) -> entry.getValue().isDone());
-
+        pistons.values().forEach(PistonBlockEntity::updateMovement);
         sendPlayerMovement();
+        // Update blocks after movement, so that players don't get stuck inside blocks
+        pistons.values().forEach(PistonBlockEntity::updateBlocks);
+
+        pistons.entrySet().removeIf((entry) -> entry.getValue().isDone());
     }
 
     public void resetPlayerMovement() {
         playerDisplacement = Vector3d.ZERO;
         playerCollided = false;
+        playerSlimeCollision = false;
     }
 
     public void sendPlayerMovement() {
         SessionPlayerEntity playerEntity = session.getPlayerEntity();
-        // Sending a movement packet cancels motion from slime blocks in the Y direction
+        // Sending movement packets cancels motion from slime blocks
         if (!playerDisplacement.equals(Vector3d.ZERO) && !isInMotion()) {
             CollisionManager collisionManager = session.getCollisionManager();
             if (collisionManager.correctPlayerPosition()) {
                 Vector3d position = Vector3d.from(collisionManager.getPlayerBoundingBox().getMiddleX(), collisionManager.getPlayerBoundingBox().getMiddleY() - (collisionManager.getPlayerBoundingBox().getSizeY() / 2), collisionManager.getPlayerBoundingBox().getMiddleZ());
-                playerEntity.setPosition(position.toFloat(), true);
-                // Using MoveEntityAbsolutePacket for teleporting seems to be smoother than MovePlayerPacket
-                // It also keeps motion from slime blocks
-                MoveEntityAbsolutePacket moveEntityPacket = new MoveEntityAbsolutePacket();
-                moveEntityPacket.setRuntimeEntityId(playerEntity.getGeyserId());
-                moveEntityPacket.setPosition(playerEntity.getPosition());
-                moveEntityPacket.setRotation(playerEntity.getBedrockRotation());
-                moveEntityPacket.setOnGround(playerEntity.isOnGround());
-                moveEntityPacket.setTeleported(true);
-                session.sendUpstreamPacket(moveEntityPacket);
+
+                boolean isOnGround = playerDisplacement.getY() != 0 || playerEntity.isOnGround();
+
+                playerEntity.moveAbsolute(session, position.toFloat(), playerEntity.getRotation(), isOnGround, true);
 
                 ClientPlayerPositionPacket playerPositionPacket = new ClientPlayerPositionPacket(playerEntity.isOnGround(), position.getX(), position.getY(), position.getZ());
                 session.sendDownstreamPacket(playerPositionPacket);
+
+                session.setLastMovementTimestamp(System.currentTimeMillis());
             }
         }
         if (!playerMotion.equals(Vector3f.ZERO)) {
@@ -126,10 +126,6 @@ public class PistonCache {
 
     public void putPiston(PistonBlockEntity pistonBlockEntity) {
         pistons.put(pistonBlockEntity.getPosition(), pistonBlockEntity);
-
-        if (updater == null || updater.isDone()) {
-            updater = session.getConnector().getGeneralThreadPool().scheduleAtFixedRate(this::update, 50, 50, TimeUnit.MILLISECONDS);
-        }
     }
 
     public void clear() {
@@ -137,7 +133,7 @@ public class PistonCache {
     }
 
     private boolean isInMotion() {
-        return !playerMotion.equals(Vector3f.ZERO);
+        return !playerMotion.equals(Vector3f.ZERO) || playerSlimeCollision;
     }
 
     private boolean isColliding() {
@@ -146,7 +142,8 @@ public class PistonCache {
 
     /**
      * Check whether a movement packet should be canceled.
-     * This cancels packets when being pushed by a piston and when not recently launched by a slime block
+     * This cancels packets when being pushed by a piston and
+     * when not being launched by a slime block.
      * @return True if the packet should be canceled
      */
     public boolean shouldCancelMovement() {

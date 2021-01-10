@@ -31,8 +31,10 @@ import com.nukkitx.math.vector.Vector3i;
 import com.nukkitx.protocol.bedrock.data.entity.EntityData;
 import com.nukkitx.protocol.bedrock.data.entity.EntityFlag;
 import com.nukkitx.protocol.bedrock.data.entity.EntityFlags;
+import com.nukkitx.protocol.bedrock.packet.MoveEntityAbsolutePacket;
 import com.nukkitx.protocol.bedrock.packet.MovePlayerPacket;
 import com.nukkitx.protocol.bedrock.packet.SetEntityDataPacket;
+import com.nukkitx.protocol.bedrock.packet.SetEntityMotionPacket;
 import lombok.Getter;
 import lombok.Setter;
 import org.geysermc.connector.entity.player.PlayerEntity;
@@ -139,6 +141,11 @@ public class CollisionManager {
                 Double.parseDouble(Float.toString(bedrockPosition.getZ())));
 
         if (session.getConnector().getConfig().isCacheChunks()) {
+            if (session.getPistonCache().shouldCancelMovement()) {
+                recalculatePosition();
+                return null;
+            }
+
             // With chunk caching, we can do some proper collision checks
             updatePlayerBoundingBox(position);
 

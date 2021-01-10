@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 GeyserMC. http://geysermc.org
+ * Copyright (c) 2019-2021 GeyserMC. http://geysermc.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -131,19 +131,21 @@ public class PistonBlockEntity {
         }
 
         BlockEntityUtils.updateBlockEntity(session, buildPistonTag(), position);
-
-        session.getPistonCache().resetPlayerMovement();
-        update();
-        session.getPistonCache().sendPlayerMovement();
     }
 
     /**
-     * Send a block entity data packets to update the position of the piston head
+     * Update the position of the piston head, moving blocks, and players.
      */
-    public void update() {
+    public void updateMovement() {
         updateProgress();
         correctPlayerPosition();
         BlockEntityUtils.updateBlockEntity(session, buildPistonTag(), position);
+    }
+
+    /**
+     * Place attached blocks in their final position when done pushing or pulling
+     */
+    public void updateBlocks() {
         if (!isDone()) {
             if (action == PistonValueType.CANCELLED_MID_PUSH && attachedBlocks.size() > 0) {
                 finishMovingBlocks();
@@ -394,6 +396,10 @@ public class PistonBlockEntity {
             Vector3d finalBlockPos = entry.getKey().toDouble().add(movement);
             if (SOLID_BOUNDING_BOX.checkIntersection(finalBlockPos, playerBoundingBox)) {
                 session.getPistonCache().setPlayerCollided(true);
+
+                if (javaId == BlockTranslator.JAVA_RUNTIME_SLIME_BLOCK_ID) {
+                    session.getPistonCache().setPlayerSlimeCollision(true);
+                }
             }
 
             if (javaId == BlockTranslator.JAVA_RUNTIME_SLIME_BLOCK_ID && testBlockCollision(blockPos, blockCollision, playerBoundingBox, extend)) {
@@ -403,6 +409,7 @@ public class PistonBlockEntity {
             }
 
             if (javaId == BlockTranslator.JAVA_RUNTIME_HONEY_BLOCK_ID && isPlayerAttached(blockPos, playerBoundingBox)) {
+                session.getPistonCache().setPlayerCollided(true);
                 displacement = Math.max(delta, displacement);
             } else if (displacement < 0.51d) { // Don't bother to check collision with other blocks as we've reached the max displacement
                 intersection = getBlockIntersection(blockPos, blockCollision, playerBoundingBox, extend);
