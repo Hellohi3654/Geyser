@@ -23,33 +23,23 @@
  * @link https://github.com/GeyserMC/Geyser
  */
 
-package org.geysermc.connector.network.translators.java.world;
+package org.geysermc.connector.network.translators.java;
 
-import com.github.steveice10.mc.protocol.packet.ingame.server.world.ServerUpdateTimePacket;
-import com.nukkitx.protocol.bedrock.packet.SetTimePacket;
+import com.github.steveice10.mc.protocol.packet.ingame.server.ServerAdvancementTabPacket;
 import org.geysermc.connector.network.session.GeyserSession;
+import org.geysermc.connector.network.session.cache.AdvancementsCache;
 import org.geysermc.connector.network.translators.PacketTranslator;
 import org.geysermc.connector.network.translators.Translator;
 
-@Translator(packet = ServerUpdateTimePacket.class)
-public class JavaUpdateTimeTranslator extends PacketTranslator<ServerUpdateTimePacket> {
+/**
+ * Indicates that the client should open a particular advancement tab
+ */
+@Translator(packet = ServerAdvancementTabPacket.class)
+public class JavaAdvancementsTabTranslator extends PacketTranslator<ServerAdvancementTabPacket> {
 
     @Override
-    public void translate(ServerUpdateTimePacket packet, GeyserSession session) {
-        // Bedrock sends a GameRulesChangedPacket if there is no daylight cycle
-        // Java just sends a negative long if there is no daylight cycle
-        long time = packet.getTime();
-
-        // https://minecraft.gamepedia.com/Day-night_cycle#24-hour_Minecraft_day
-        SetTimePacket setTimePacket = new SetTimePacket();
-        setTimePacket.setTime((int) Math.abs(time) % 24000);
-        session.sendUpstreamPacket(setTimePacket);
-        if (!session.isDaylightCycle() && time >= 0) {
-            // Client thinks there is no daylight cycle but there is
-            session.setDaylightCycle(true);
-        } else if (session.isDaylightCycle() && time < 0) {
-            // Client thinks there is daylight cycle but there isn't
-            session.setDaylightCycle(false);
-        }
+    public void translate(ServerAdvancementTabPacket packet, GeyserSession session) {
+        session.getAdvancementsCache().setCurrentAdvancementCategoryId(packet.getTabId());
+        session.sendForm(session.getAdvancementsCache().buildListForm(), AdvancementsCache.ADVANCEMENTS_LIST_FORM_ID);
     }
 }
