@@ -706,9 +706,6 @@ public class GeyserSession implements CommandSender {
                 handleDownstreamPacket(event.getPacket());
                 }
             }
-                PacketTranslatorRegistry.JAVA_TRANSLATOR.translate(event.getPacket().getClass(), event.getPacket(), GeyserSession.this);
-                }
-            }
 
             @Override
             public void packetError(PacketErrorEvent event) {
