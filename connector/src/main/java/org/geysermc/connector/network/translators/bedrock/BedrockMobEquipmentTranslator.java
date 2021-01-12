@@ -44,7 +44,10 @@ public class BedrockMobEquipmentTranslator extends PacketTranslator<MobEquipment
             // For the last condition - Don't update the slot if the slot is the same - not Java Edition behavior and messes with plugins such as Grief Prevention
             return;
         }
-		
+
+        // Send book update before switching hotbar slot
+        session.getBookEditCache().checkForSend();
+
         session.getPlayerInventory().setHeldItemSlot(packet.getHotbarSlot());
 
         ClientPlayerChangeHeldItemPacket changeHeldItemPacket = new ClientPlayerChangeHeldItemPacket(packet.getHotbarSlot());

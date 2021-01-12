@@ -48,7 +48,6 @@ import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.PacketTranslator;
 import org.geysermc.connector.network.translators.Translator;
 import org.geysermc.connector.network.translators.item.ItemEntry;
-import org.geysermc.connector.network.translators.item.ItemRegistry;
 import org.geysermc.connector.network.translators.world.block.BlockTranslator;
 import org.geysermc.connector.utils.BlockUtils;
 
@@ -142,6 +141,7 @@ public class BedrockActionTranslator extends PacketTranslator<PlayerActionPacket
                         ItemEntry itemEntry = null;
                         CompoundTag nbtData = new CompoundTag("");
                         if (item != null) {
+                            itemEntry = item.getItemEntry();
                             nbtData = item.getNbt();
                         }
                         double breakTime = Math.ceil(BlockUtils.getBreakTime(blockHardness, blockState, itemEntry, nbtData, session) * 20);

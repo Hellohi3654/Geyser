@@ -76,6 +76,7 @@ public class JavaPlayerActionAckTranslator extends PacketTranslator<ServerPlayer
                     ItemEntry itemEntry = null;
                     CompoundTag nbtData = new CompoundTag("");
                     if (item != null) {
+                        itemEntry = item.getItemEntry();
                         nbtData = item.getNbt();
                     }
                     double breakTime = Math.ceil(BlockUtils.getBreakTime(blockHardness, packet.getNewState(), itemEntry, nbtData, session) * 20);
@@ -94,7 +95,7 @@ public class JavaPlayerActionAckTranslator extends PacketTranslator<ServerPlayer
                     session.setBreakingBlock(0);
                     session.sendUpstreamPacket(levelEvent);
                     break;
-                }
+            }
         }
     }
 }
