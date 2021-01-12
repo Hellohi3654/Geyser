@@ -540,6 +540,10 @@ public abstract class InventoryTranslator {
                 case CRAFT_RESULTS_DEPRECATED: {
                     break;
                 }
+                case CRAFT_RECIPE_OPTIONAL: {
+                    // Anvils and cartography tables will handle this
+                    break;
+                }
                 default:
                     return rejectRequest(request);
             }
