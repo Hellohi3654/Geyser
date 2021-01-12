@@ -716,11 +716,11 @@ public class GeyserSession implements CommandSender {
                 LocaleUtils.downloadAndLoadLocale(locale);
 
                 // Register plugin channels
-                connector.getGeneralThreadPool().schedule(() -> {
-                    for (String channel : getConnector().getRegisteredPluginChannels()) {
-                    registerPluginChannel(channel);
-                    }
-                }, 1, TimeUnit.SECONDS);
+                    connector.getGeneralThreadPool().schedule(() -> {
+                        for (String channel : getConnector().getRegisteredPluginChannels()) {
+                        registerPluginChannel(channel);
+                        }
+                    }, 1, TimeUnit.SECONDS);
             }
 
             @Override
@@ -738,10 +738,7 @@ public class GeyserSession implements CommandSender {
             @Override
             public void packetReceived(PacketReceivedEvent event) {
                 if (!closed) {
-                    handleDownstreamPacket(event.getPacket());
-					}
-				}
-                    PacketTranslatorRegistry.JAVA_TRANSLATOR.translate(event.getPacket().getClass(), event.getPacket(), GeyserSession.this);
+                handleDownstreamPacket(event.getPacket());
                 }
             }
 
