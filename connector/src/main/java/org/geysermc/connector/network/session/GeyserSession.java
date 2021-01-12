@@ -143,6 +143,7 @@ public class GeyserSession implements CommandSender {
     private final SessionPlayerEntity playerEntity;
 
     private AdvancementsCache advancementsCache;
+    private BookEditCache bookEditCache;
     private ChunkCache chunkCache;
     private EntityCache entityCache;
     private EntityEffectCache effectCache;
@@ -418,12 +419,14 @@ public class GeyserSession implements CommandSender {
      * The thread that will run every 50 milliseconds - one Minecraft tick.
      */
     private ScheduledFuture<?> tickThread = null;
+
     private MinecraftProtocol protocol;
 
     public GeyserSession(GeyserConnector connector, BedrockServerSession bedrockServerSession) {
         this.connector = connector;
         this.upstream = new UpstreamSession(bedrockServerSession);
 
+        this.bookEditCache = new BookEditCache(this);
         this.advancementsCache = new AdvancementsCache(this);
         this.chunkCache = new ChunkCache(this);
         this.entityCache = new EntityCache(this);
@@ -795,6 +798,7 @@ public class GeyserSession implements CommandSender {
             tickThread.cancel(true);
         }
 
+        this.bookEditCache = null;
         this.advancementsCache = null;
         this.chunkCache = null;
         this.entityCache = null;
