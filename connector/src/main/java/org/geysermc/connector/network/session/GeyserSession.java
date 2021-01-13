@@ -415,7 +415,9 @@ public class GeyserSession implements CommandSender {
         EventManager.getInstance().triggerEvent(new SessionConnectEvent(this, "Disconnected by Server")) // TODO: @translate
                 .onCancelled(result -> disconnect(result.getEvent().getMessage()));
 
-        connector.getPlayers().forEach(player -> this.emotes.addAll(player.getEmotes()));
+        // Make a copy to prevent ConcurrentModificationException
+        final List<GeyserSession> tmpPlayers = new ArrayList<>(connector.getPlayers());
+        tmpPlayers.forEach(player -> this.emotes.addAll(player.getEmotes()));
 
         bedrockServerSession.addDisconnectHandler(disconnectReason -> {
             EventManager.getInstance().triggerEvent(new SessionDisconnectEvent(this, disconnectReason));
