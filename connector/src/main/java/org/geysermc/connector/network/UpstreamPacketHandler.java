@@ -41,6 +41,7 @@ import org.geysermc.connector.event.events.packet.upstream.MovePlayerPacketRecei
 import org.geysermc.connector.event.events.packet.upstream.ResourcePackClientResponsePacketReceive;
 import org.geysermc.connector.event.events.packet.upstream.SetLocalPlayerAsInitializedPacketReceive;
 import org.geysermc.connector.network.session.GeyserSession;
+import org.geysermc.connector.network.session.cache.AdvancementsCache;
 import org.geysermc.connector.network.translators.PacketTranslatorRegistry;
 import org.geysermc.connector.utils.LanguageUtils;
 import org.geysermc.connector.utils.LoginEncryptionUtils;

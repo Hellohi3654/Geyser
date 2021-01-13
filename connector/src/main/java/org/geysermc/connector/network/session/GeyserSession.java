@@ -139,7 +139,8 @@ public class GeyserSession implements CommandSender {
 
     private final SessionPlayerEntity playerEntity;
 
-    private BookEditCache bookEditCache;
+    private AdvancementsCache advancementsCache;
+	private BookEditCache bookEditCache;
     private ChunkCache chunkCache;
     private EntityCache entityCache;
     private EntityEffectCache effectCache;
@@ -966,48 +967,6 @@ public class GeyserSession implements CommandSender {
         startGamePacket.setInventoriesServerAuthoritative(true);
         startGamePacket.setAuthoritativeMovementMode(AuthoritativeMovementMode.CLIENT);
         sendUpstreamPacket(startGamePacket);
-    }
-
-    /**
-     * Adds a new inventory task.
-     * Inventory tasks are executed one at a time, in order.
-     *
-     * @param task the task to run
-     */
-    public void addInventoryTask(Runnable task) {
-        synchronized (inventoryLock) {
-            System.out.println("new task " + task.toString());
-            inventoryFuture = inventoryFuture.thenRun(task).exceptionally(throwable -> {
-                GeyserConnector.getInstance().getLogger().error("Error processing inventory task", throwable.getCause());
-                return null;
-            });
-        }
-    }
-
-    /**
-     * Adds a new inventory task with a delay.
-     * The delay is achieved by scheduling with the Geyser general thread pool.
-     * Inventory tasks are executed one at a time, in order.
-     *
-     * @param task the delayed task to run
-     * @param delayMillis delay in milliseconds
-     */
-    public void addInventoryTask(Runnable task, long delayMillis) {
-        synchronized (inventoryLock) {
-            System.out.println("new delayed task " + task.toString());
-            Executor delayedExecutor = command -> GeyserConnector.getInstance().getGeneralThreadPool().schedule(command, delayMillis, TimeUnit.MILLISECONDS);
-            inventoryFuture = inventoryFuture.thenRunAsync(task, delayedExecutor).exceptionally(throwable -> {
-                GeyserConnector.getInstance().getLogger().error("Error processing inventory task", throwable.getCause());
-                return null;
-            });
-        }
-    }
-
-    /**
-     * @return the next Bedrock item network ID to use for a new item
-     */
-    public int getNextItemNetId() {
-        return itemNetId.getAndIncrement();
     }
 
     /**
