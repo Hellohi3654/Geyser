@@ -37,10 +37,10 @@ import org.geysermc.connector.network.session.GeyserSession;
 
 public class WindowCache {
 
-    private final GeyserSession session;
+    private GeyserSession session;
 
     @Getter
-    private final Int2ObjectMap<FormWindow> windows = new Int2ObjectOpenHashMap<>();
+    private Int2ObjectMap<FormWindow> windows = new Int2ObjectOpenHashMap<>();
 
     public WindowCache(GeyserSession session) {
         this.session = session;
