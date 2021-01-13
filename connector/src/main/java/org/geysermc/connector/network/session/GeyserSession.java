@@ -162,7 +162,6 @@ public class GeyserSession implements CommandSender {
      */
     private final Object2LongMap<Vector3i> itemFrameCache = new Object2LongOpenHashMap<>();
 
-
     @Setter
     private Vector2i lastChunkPosition = null;
     private int renderDistance;
@@ -780,7 +779,7 @@ public class GeyserSession implements CommandSender {
      * Called every 50 milliseconds - one Minecraft tick.
      */
     public void tick() {
-        pistonCache.tick(this);
+        pistonCache.tick();
         // Check to see if the player's position needs updating - a position update should be sent once every 3 seconds
         if (spawned && (System.currentTimeMillis() - lastMovementTimestamp) > 3000) {
             // Recalculate in case something else changed position
