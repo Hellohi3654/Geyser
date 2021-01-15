@@ -52,13 +52,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Translator(packet = ServerSetSlotPacket.class)
 public class JavaSetSlotTranslator extends PacketTranslator<ServerSetSlotPacket> {
 
     @Override
     public void translate(ServerSetSlotPacket packet, GeyserSession session) {
-        System.out.println(packet.toString());
         session.addInventoryTask(() -> {
             if (packet.getWindowId() == 255) { //cursor
                 GeyserItemStack newItem = GeyserItemStack.from(packet.getItem());
@@ -74,7 +74,10 @@ public class JavaSetSlotTranslator extends PacketTranslator<ServerSetSlotPacket>
 
             InventoryTranslator translator = session.getInventoryTranslator();
             if (translator != null) {
-                updateCraftingGrid(session, packet, inventory, translator);
+                if (session.getCraftingGridFuture() != null) {
+                    session.getCraftingGridFuture().cancel(false);
+                }
+                session.setCraftingGridFuture(session.getConnector().getGeneralThreadPool().schedule(() -> session.addInventoryTask(() -> updateCraftingGrid(session, packet, inventory, translator)), 150, TimeUnit.MILLISECONDS));
 
                 GeyserItemStack newItem = GeyserItemStack.from(packet.getItem());
                 inventory.setItem(packet.getSlot(), newItem, session);
@@ -125,11 +128,6 @@ public class JavaSetSlotTranslator extends PacketTranslator<ServerSetSlotPacket>
             height += -firstRow + 1;
             width += -firstCol + 1;
 
-            System.out.println("Start Row: " + firstRow);
-            System.out.println("Start Column: " + firstCol);
-            System.out.println("Rows: " + height);
-            System.out.println("Columns: " + width);
-
             //TODO
             recipes:
             for (Recipe recipe : session.getCraftingRecipes().values()) {
@@ -157,8 +155,6 @@ public class JavaSetSlotTranslator extends PacketTranslator<ServerSetSlotPacket>
                             continue;
                         }
                     }
-                    System.out.println("FOUND SHAPED RECIPE :)");
-                    System.out.println(recipe);
                     // Recipe is had, don't sent packet
                     return;
                 } else if (recipe.getType() == RecipeType.CRAFTING_SHAPELESS) {
@@ -191,7 +187,6 @@ public class JavaSetSlotTranslator extends PacketTranslator<ServerSetSlotPacket>
                     return;
                 }
             }
-            System.out.println("Sending packet!");
 
             UUID uuid = UUID.randomUUID();
             int newRecipeId = session.getLastRecipeNetId().incrementAndGet();
@@ -217,7 +212,6 @@ public class JavaSetSlotTranslator extends PacketTranslator<ServerSetSlotPacket>
             }
 
             ShapedRecipeData data = new ShapedRecipeData(width, height, "", javaIngredients, packet.getItem());
-            session.getConnector().getLogger().error(data.toString());
             // Cache this recipe so we know the client has received it
             session.getCraftingRecipes().put(newRecipeId, new Recipe(RecipeType.CRAFTING_SHAPED, uuid.toString(), data));
 
@@ -234,7 +228,6 @@ public class JavaSetSlotTranslator extends PacketTranslator<ServerSetSlotPacket>
                     newRecipeId
             ));
             craftPacket.setCleanRecipes(false);
-            System.out.println(craftPacket);
             session.sendUpstreamPacket(craftPacket);
 
             index = 0;
