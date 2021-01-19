@@ -135,6 +135,11 @@ public class CollisionManager {
                 Double.parseDouble(Float.toString(bedrockPosition.getZ())));
 
         if (session.getConnector().getConfig().isCacheChunks()) {
+            if (session.getPistonCache().shouldCancelMovement()) {
+                recalculatePosition();
+                return null;
+            }
+
             // With chunk caching, we can do some proper collision checks
             updatePlayerBoundingBox(position);
 
@@ -145,9 +150,7 @@ public class CollisionManager {
                 return null;
             }
 
-            position = Vector3d.from(playerBoundingBox.getMiddleX(),
-                    playerBoundingBox.getMiddleY() - (playerBoundingBox.getSizeY() / 2),
-                    playerBoundingBox.getMiddleZ());
+            position = playerBoundingBox.getBottomCenter();
         } else {
             // When chunk caching is off, we have to rely on this
             // It rounds the Y position up to the nearest 0.5
