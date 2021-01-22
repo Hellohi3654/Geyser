@@ -68,7 +68,8 @@ public class JavaDeclareRecipesTranslator extends PacketTranslator<ServerDeclare
                 case CRAFTING_SHAPELESS: {
                     ShapelessRecipeData shapelessRecipeData = (ShapelessRecipeData) recipe.getData();
                     ItemData output = ItemTranslator.translateToBedrock(session, shapelessRecipeData.getResult());
-                    output = ItemData.of(output.getId(), output.getDamage(), output.getCount()); //strip NBT
+                    // Strip NBT - tools won't appear in the recipe book otherwise
+                    output = ItemData.of(output.getId(), output.getDamage(), output.getCount());
                     ItemData[][] inputCombinations = combinations(session, shapelessRecipeData.getIngredients());
                     for (ItemData[] inputs : inputCombinations) {
                         UUID uuid = UUID.randomUUID();
@@ -81,7 +82,8 @@ public class JavaDeclareRecipesTranslator extends PacketTranslator<ServerDeclare
                 case CRAFTING_SHAPED: {
                     ShapedRecipeData shapedRecipeData = (ShapedRecipeData) recipe.getData();
                     ItemData output = ItemTranslator.translateToBedrock(session, shapedRecipeData.getResult());
-                    output = ItemData.of(output.getId(), output.getDamage(), output.getCount()); //strip NBT
+                    // See above
+                    output = ItemData.of(output.getId(), output.getDamage(), output.getCount());
                     ItemData[][] inputCombinations = combinations(session, shapedRecipeData.getIngredients());
                     for (ItemData[] inputs : inputCombinations) {
                         UUID uuid = UUID.randomUUID();
@@ -194,6 +196,12 @@ public class JavaDeclareRecipesTranslator extends PacketTranslator<ServerDeclare
     }
 
     //TODO: rewrite
+    /**
+     * The Java server sends an array of items for each ingredient you can use per slot in the crafting grid.
+     * Bedrock recipes take only one ingredient per crafting grid slot.
+     *
+     * @return the Java ingredient list as an array that Bedrock can understand
+     */
     private ItemData[][] combinations(GeyserSession session, Ingredient[] ingredients) {
         Map<Set<ItemData>, IntSet> squashedOptions = new HashMap<>();
         for (int i = 0; i < ingredients.length; i++) {
