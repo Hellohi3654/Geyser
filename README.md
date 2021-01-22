@@ -2,6 +2,8 @@
 ## Instead use bundabrg-bleeding Branch VVV
 - (https://github.com/Hellohi3654/Geyser/tree/bundabrg-bleeding)
 
+![Geyser Build Branch](https://github.com/Hellohi3654/Geyser/workflows/Geyser%20Build%20Branch/badge.svg)
+
 ## I have a server that uses the bundabrg-bleeding branch
 
 - Join the discord if you have any questions or create a issue (https://github.com/Hellohi3654/Geyser/issues)
