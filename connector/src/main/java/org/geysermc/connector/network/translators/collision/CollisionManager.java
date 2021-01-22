@@ -37,6 +37,7 @@ import lombok.Setter;
 import org.geysermc.connector.entity.player.PlayerEntity;
 import org.geysermc.connector.entity.type.EntityType;
 import org.geysermc.connector.network.session.GeyserSession;
+import org.geysermc.connector.network.session.cache.PistonCache;
 import org.geysermc.connector.network.translators.collision.translators.BlockCollision;
 
 import java.util.ArrayList;
@@ -135,8 +136,20 @@ public class CollisionManager {
                 Double.parseDouble(Float.toString(bedrockPosition.getZ())));
 
         if (session.getConnector().getConfig().isCacheChunks()) {
+            PistonCache pistonCache = session.getPistonCache();
+            if (pistonCache.shouldCancelMovement()) {
+                recalculatePosition();
+                return null;
+            }
+
             // With chunk caching, we can do some proper collision checks
             updatePlayerBoundingBox(position);
+
+            pistonCache.correctPlayerPosition();
+            if (pistonCache.shouldCancelMovement()) {
+                recalculatePosition();
+                return null;
+            }
 
             // Correct player position
             if (!correctPlayerPosition()) {
@@ -145,9 +158,7 @@ public class CollisionManager {
                 return null;
             }
 
-            position = Vector3d.from(playerBoundingBox.getMiddleX(),
-                    playerBoundingBox.getMiddleY() - (playerBoundingBox.getSizeY() / 2),
-                    playerBoundingBox.getMiddleZ());
+            position = playerBoundingBox.getBottomCenter();
         } else {
             // When chunk caching is off, we have to rely on this
             // It rounds the Y position up to the nearest 0.5
