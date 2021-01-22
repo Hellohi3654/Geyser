@@ -38,6 +38,7 @@ import lombok.Setter;
 import org.geysermc.connector.entity.player.PlayerEntity;
 import org.geysermc.connector.entity.type.EntityType;
 import org.geysermc.connector.network.session.GeyserSession;
+import org.geysermc.connector.network.session.cache.PistonCache;
 import org.geysermc.connector.network.translators.collision.translators.BlockCollision;
 import org.geysermc.connector.network.translators.world.block.BlockTranslator;
 
@@ -139,13 +140,20 @@ public class CollisionManager {
                 Double.parseDouble(Float.toString(bedrockPosition.getZ())));
 
         if (session.getConnector().getConfig().isCacheChunks()) {
-            if (session.getPistonCache().shouldCancelMovement()) {
+            PistonCache pistonCache = session.getPistonCache();
+            if (pistonCache.shouldCancelMovement()) {
                 recalculatePosition();
                 return null;
             }
 
             // With chunk caching, we can do some proper collision checks
             updatePlayerBoundingBox(position);
+
+            pistonCache.correctPlayerPosition();
+            if (pistonCache.shouldCancelMovement()) {
+                recalculatePosition();
+                return null;
+            }
 
             // Correct player position
             if (!correctPlayerPosition()) {

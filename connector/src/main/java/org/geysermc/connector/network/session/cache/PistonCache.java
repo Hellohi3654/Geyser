@@ -48,6 +48,10 @@ public class PistonCache {
 
     @Getter
     private Vector3d playerDisplacement = Vector3d.ZERO;
+
+    @Getter @Setter
+    private boolean capDisplacement = true;
+
     @Getter @Setter
     private Vector3f playerMotion = Vector3f.ZERO;
 
@@ -71,13 +75,22 @@ public class PistonCache {
         this.session = session;
     }
 
-    public void tick() {
+    public synchronized void tick() {
+        capDisplacement = true;
         resetPlayerMovement();
         pistons.values().forEach(PistonBlockEntity::updateMovement);
         sendPlayerMovement();
+        sendPlayerMotion();
         // Update blocks after movement, so that players don't get stuck inside blocks
         pistons.values().forEach(PistonBlockEntity::updateBlocks);
+    }
 
+    public synchronized void correctPlayerPosition() {
+        capDisplacement = false;
+        resetPlayerMovement();
+        pistons.values().forEach(PistonBlockEntity::pushPlayer);
+        sendPlayerMotion();
+        // Clean up done pistons after we've used them for position corrections
         pistons.entrySet().removeIf((entry) -> entry.getValue().isDone());
     }
 
@@ -107,7 +120,11 @@ public class PistonCache {
                 session.setLastMovementTimestamp(System.currentTimeMillis());
             }
         }
+    }
+
+    private void sendPlayerMotion() {
         if (!playerMotion.equals(Vector3f.ZERO)) {
+            SessionPlayerEntity playerEntity = session.getPlayerEntity();
             playerEntity.setMotion(playerMotion);
             SetEntityMotionPacket setEntityMotionPacket = new SetEntityMotionPacket();
             setEntityMotionPacket.setRuntimeEntityId(playerEntity.getGeyserId());
@@ -121,13 +138,17 @@ public class PistonCache {
     }
 
     /**
-     * Set the player displacement and cap it to a range of -0.51 to 0.51
+     * Set the player displacement and move the player's bounding box
+     * If capDisplacement is true, displacement is capped to a range of -0.51 to 0.51
      *
      * @param displacement The new player displacement
      */
     public void setPlayerDisplacement(Vector3d displacement) {
         // Clamp to range -0.51 to 0.51
-        Vector3d adjustedDisplacement = displacement.max(-0.51d, -0.51d, -0.51d).min(0.51d, 0.51d, 0.51d);
+        Vector3d adjustedDisplacement = displacement;
+        if (capDisplacement) {
+            adjustedDisplacement = displacement.max(-0.51d, -0.51d, -0.51d).min(0.51d, 0.51d, 0.51d);
+        }
         Vector3d delta = adjustedDisplacement.sub(playerDisplacement);
         session.getCollisionManager().getPlayerBoundingBox().translate(delta.getX(), delta.getY(), delta.getZ());
         playerDisplacement = adjustedDisplacement;
@@ -157,6 +178,7 @@ public class PistonCache {
      * Check whether a movement packet should be canceled.
      * This cancels packets when being pushed by a piston and
      * when not being launched by a slime block.
+     *
      * @return True if the packet should be canceled
      */
     public boolean shouldCancelMovement() {
