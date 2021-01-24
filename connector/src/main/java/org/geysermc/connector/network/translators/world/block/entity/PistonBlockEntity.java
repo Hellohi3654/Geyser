@@ -32,9 +32,7 @@ import com.nukkitx.math.vector.Vector3i;
 import com.nukkitx.nbt.NbtMap;
 import com.nukkitx.nbt.NbtMapBuilder;
 import com.nukkitx.protocol.bedrock.packet.UpdateBlockPacket;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.session.cache.PistonCache;
@@ -374,13 +372,23 @@ public class PistonBlockEntity {
         int pistonHeadId = BlockStateValues.getPistonHead(orientation);
         resolveCollision(headPos, movementProgress, pistonHeadId, playerBoundingBox);
 
-        // Resolve collision with any attached moving blocks
+        // Resolve collision with any attached moving blocks, but skip slime blocks
+        // This prevents players from being launched by slime blocks covered by other blocks
         for (Object2IntMap.Entry<Vector3i> entry : attachedBlocks.object2IntEntrySet()) {
             Vector3d blockPos = entry.getKey().toDouble();
             int blockId = entry.getIntValue();
-            resolveCollision(blockPos, movementProgress, blockId, playerBoundingBox);
+            if (blockId != BlockTranslator.JAVA_RUNTIME_SLIME_BLOCK_ID) {
+                resolveCollision(blockPos, movementProgress, blockId, playerBoundingBox);
+            }
         }
-
+        // Resolve collision with slime blocks
+        for (Object2IntMap.Entry<Vector3i> entry : attachedBlocks.object2IntEntrySet()) {
+            Vector3d blockPos = entry.getKey().toDouble();
+            int blockId = entry.getIntValue();
+            if (blockId == BlockTranslator.JAVA_RUNTIME_SLIME_BLOCK_ID) {
+                resolveCollision(blockPos, movementProgress, blockId, playerBoundingBox);
+            }
+        }
         // Undo shrink
         playerBoundingBox.setSizeX(playerBoundingBox.getSizeX() + shrink.getX());
         playerBoundingBox.setSizeY(playerBoundingBox.getSizeY() + shrink.getY());
@@ -524,9 +532,6 @@ public class PistonBlockEntity {
         }
         Vector3d movement = getMovement().toDouble();
 
-        double delta = Math.abs(progress - lastProgress);
-        Vector3d extend = movement.mul(delta);
-
         BlockCollision blockCollision = CollisionTranslator.getCollision(javaId, 0, 0, 0);
         // Check if the player collides with the movingBlock block entity
         Vector3d finalBlockPos = startingPos.add(movement);
@@ -542,10 +547,12 @@ public class PistonBlockEntity {
         if (javaId == BlockTranslator.JAVA_RUNTIME_HONEY_BLOCK_ID && isPlayerAttached(blockPos, playerBoundingBox)) {
             pistonCache.setPlayerCollided(true);
 
+            double delta = Math.abs(progress - lastProgress);
             Vector3d totalDisplacement = pistonCache.getPlayerDisplacement().add(movement.mul(delta));
             pistonCache.setPlayerDisplacement(totalDisplacement);
         } else {
             // Move the player out of collision
+            Vector3d extend = movement.mul(Math.min(1 - movementProgress, 0.5));
             double intersection = getBlockIntersection(blockPos, blockCollision, playerBoundingBox, extend, movementDirection);
             if (intersection > 0) {
                 Vector3d displacement = movement.mul(intersection + 0.01d);
