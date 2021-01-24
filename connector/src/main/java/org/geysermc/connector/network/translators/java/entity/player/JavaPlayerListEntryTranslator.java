@@ -35,7 +35,6 @@ import org.geysermc.connector.entity.player.PlayerEntity;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.PacketTranslator;
 import org.geysermc.connector.network.translators.Translator;
-import org.geysermc.connector.utils.LocaleUtils;
 import org.geysermc.connector.skin.SkinManager;
 
 @Translator(packet = ServerPlayerListEntryPacket.class)
