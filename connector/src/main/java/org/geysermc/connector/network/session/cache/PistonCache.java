@@ -49,7 +49,6 @@ public class PistonCache {
     @Getter
     private Vector3d playerDisplacement = Vector3d.ZERO;
 
-    @Getter @Setter
     private boolean capDisplacement = true;
 
     @Getter @Setter
@@ -57,8 +56,7 @@ public class PistonCache {
 
     /**
      * Stores whether a player has/will collide with any moving blocks.
-     * This is used to cancel movement from Bedrock that pushes players
-     * out of collision.
+     * This is used to prevent motion from being reset while inside a moving block.
      */
     @Getter @Setter
     private boolean playerCollided = false;
@@ -79,7 +77,7 @@ public class PistonCache {
         capDisplacement = true;
         resetPlayerMovement();
         pistons.values().forEach(PistonBlockEntity::updateMovement);
-        sendPlayerMovement();
+        sendPlayerMovement(true);
         sendPlayerMotion();
         // Update blocks after movement, so that players don't get stuck inside blocks
         pistons.values().forEach(PistonBlockEntity::updateBlocks);
@@ -100,9 +98,8 @@ public class PistonCache {
         playerSlimeCollision = false;
     }
 
-    private void sendPlayerMovement() {
+    public void sendPlayerMovement(boolean sendToJava) {
         SessionPlayerEntity playerEntity = session.getPlayerEntity();
-        // Sending movement packets cancels motion from slime blocks
         if (!playerDisplacement.equals(Vector3d.ZERO)) {
             CollisionManager collisionManager = session.getCollisionManager();
             if (collisionManager.correctPlayerPosition()) {
@@ -110,14 +107,16 @@ public class PistonCache {
 
                 boolean isOnGround = playerDisplacement.getY() > 0 || playerEntity.isOnGround();
 
-                if (!isInMotion()) {
+                if (playerMotion.getX() == 0 && playerMotion.getZ() == 0) {
                     playerEntity.moveAbsolute(session, position.toFloat(), playerEntity.getRotation(), isOnGround, true);
                 }
 
-                ClientPlayerPositionPacket playerPositionPacket = new ClientPlayerPositionPacket(isOnGround, position.getX(), position.getY(), position.getZ());
-                session.sendDownstreamPacket(playerPositionPacket);
+                if (sendToJava) {
+                    ClientPlayerPositionPacket playerPositionPacket = new ClientPlayerPositionPacket(isOnGround, position.getX(), position.getY(), position.getZ());
+                    session.sendDownstreamPacket(playerPositionPacket);
 
-                session.setLastMovementTimestamp(System.currentTimeMillis());
+                    session.setLastMovementTimestamp(System.currentTimeMillis());
+                }
             }
         }
     }
@@ -166,22 +165,7 @@ public class PistonCache {
         pistons.clear();
     }
 
-    private boolean isInMotion() {
-        return !playerMotion.equals(Vector3f.ZERO) || playerSlimeCollision;
-    }
-
     private boolean isColliding() {
         return !playerDisplacement.equals(Vector3d.ZERO) || playerCollided;
-    }
-
-    /**
-     * Check whether a movement packet should be canceled.
-     * This cancels packets when being pushed by a piston and
-     * when not being launched by a slime block.
-     *
-     * @return True if the packet should be canceled
-     */
-    public boolean shouldCancelMovement() {
-        return !isInMotion() && isColliding();
     }
 }

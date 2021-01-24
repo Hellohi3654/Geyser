@@ -140,20 +140,11 @@ public class CollisionManager {
                 Double.parseDouble(Float.toString(bedrockPosition.getZ())));
 
         if (session.getConnector().getConfig().isCacheChunks()) {
-            PistonCache pistonCache = session.getPistonCache();
-            if (pistonCache.shouldCancelMovement()) {
-                recalculatePosition();
-                return null;
-            }
-
             // With chunk caching, we can do some proper collision checks
             updatePlayerBoundingBox(position);
 
+            PistonCache pistonCache = session.getPistonCache();
             pistonCache.correctPlayerPosition();
-            if (pistonCache.shouldCancelMovement()) {
-                recalculatePosition();
-                return null;
-            }
 
             // Correct player position
             if (!correctPlayerPosition()) {
@@ -167,6 +158,11 @@ public class CollisionManager {
             if (!onGround) {
                 // Trim the position to prevent rounding errors that make Java think we are clipping into a block
                 position = Vector3d.from(position.getX(), Double.parseDouble(DECIMAL_FORMAT.format(position.getY())), position.getZ());
+            }
+
+            // Send corrected position to Bedrock when pushed by a piston
+            if (!pistonCache.getPlayerDisplacement().equals(Vector3d.ZERO)) {
+                pistonCache.sendPlayerMovement(false);
             }
 
         } else {
