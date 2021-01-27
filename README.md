@@ -7,6 +7,7 @@
 ## I have a server that uses the bundabrg-bleeding branch
 
 - Join the discord if you have any questions or create a issue (https://github.com/Hellohi3654/Geyser/issues)
+- https://discord.gg/92xQSQnKzG
 - IP and Port for both Java and Bedrock Players VVV
 
 - Bedrock:
