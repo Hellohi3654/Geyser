@@ -33,8 +33,12 @@ import org.geysermc.connector.utils.SettingsUtils;
 
 public class SettingsCommand extends GeyserCommand {
 
+    private final GeyserConnector connector;
+
     public SettingsCommand(GeyserConnector connector, String name, String description, String permission) {
         super(name, description, permission);
+
+        this.connector = connector;
     }
 
     @Override
@@ -60,10 +64,5 @@ public class SettingsCommand extends GeyserCommand {
     @Override
     public boolean isExecutableOnConsole() {
         return false;
-    }
-
-    @Override
-    public boolean isBedrockOnly() {
-        return true;
     }
 }

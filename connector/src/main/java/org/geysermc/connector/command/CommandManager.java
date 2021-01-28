@@ -29,7 +29,6 @@ import lombok.Getter;
 
 import org.geysermc.connector.GeyserConnector;
 import org.geysermc.connector.command.defaults.*;
-import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.utils.LanguageUtils;
 
 import java.util.*;
@@ -89,15 +88,7 @@ public abstract class CommandManager {
             return;
         }
 
-        if (sender instanceof GeyserSession) {
-            cmd.execute((GeyserSession) sender, sender, args);
-        } else {
-            if (!cmd.isBedrockOnly()) {
-                cmd.execute(null, sender, args);
-            } else {
-                connector.getLogger().error(LanguageUtils.getLocaleStringLog("geyser.bootstrap.command.bedrock_only"));
-            }
-        }
+        cmd.execute(sender, args);
     }
 
     /**
