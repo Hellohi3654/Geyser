@@ -41,7 +41,6 @@ import org.geysermc.connector.event.events.packet.upstream.MovePlayerPacketRecei
 import org.geysermc.connector.event.events.packet.upstream.ResourcePackClientResponsePacketReceive;
 import org.geysermc.connector.event.events.packet.upstream.SetLocalPlayerAsInitializedPacketReceive;
 import org.geysermc.connector.network.session.GeyserSession;
-import org.geysermc.connector.network.session.cache.AdvancementsCache;
 import org.geysermc.connector.network.translators.PacketTranslatorRegistry;
 import org.geysermc.connector.utils.LanguageUtils;
 import org.geysermc.connector.utils.LoginEncryptionUtils;
@@ -182,22 +181,8 @@ public class UpstreamPacketHandler extends LoggingPacketHandler {
 
         packet = result.getEvent().getPacket();
 
-        switch (packet.getFormId()) {
-            case AdvancementsCache.ADVANCEMENT_INFO_FORM_ID:
-                return session.getAdvancementsCache().handleInfoForm(packet.getFormData());
-            case AdvancementsCache.ADVANCEMENTS_LIST_FORM_ID:
-                return session.getAdvancementsCache().handleListForm(packet.getFormData());
-            case AdvancementsCache.ADVANCEMENTS_MENU_FORM_ID:
-                return session.getAdvancementsCache().handleMenuForm(packet.getFormData());
-            case SettingsUtils.SETTINGS_FORM_ID:
-                return SettingsUtils.handleSettingsForm(session, packet.getFormData());
-            case StatisticsUtils.STATISTICS_LIST_FORM_ID:
-                return StatisticsUtils.handleListForm(session, packet.getFormData());
-            case StatisticsUtils.STATISTICS_MENU_FORM_ID:
-                return StatisticsUtils.handleMenuForm(session, packet.getFormData());
-        }
-
-        return LoginEncryptionUtils.authenticateFromForm(session, connector, packet.getFormId(), packet.getFormData());
+        session.getFormCache().handleResponse(packet);
+        return true;
     }
 
     private boolean couldLoginUserByName(String bedrockUsername) {
@@ -232,7 +217,7 @@ public class UpstreamPacketHandler extends LoggingPacketHandler {
         if (!session.isLoggedIn() && !session.isLoggingIn() && session.getConnector().getAuthType() == AuthType.ONLINE) {
             // TODO it is safer to key authentication on something that won't change (UUID, not username)
             if (!couldLoginUserByName(session.getAuthData().getName())) {
-                LoginEncryptionUtils.showLoginWindow(session);
+                LoginEncryptionUtils.buildAndShowLoginWindow(session);
             }
             // else we were able to log the user in
         }

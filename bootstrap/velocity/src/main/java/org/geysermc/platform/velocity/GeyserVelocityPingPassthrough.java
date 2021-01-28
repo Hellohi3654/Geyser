@@ -31,10 +31,11 @@ import com.velocitypowered.api.proxy.InboundConnection;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
 import lombok.AllArgsConstructor;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.text.serializer.legacy.LegacyComponentSerializer;
 import org.geysermc.connector.common.ping.GeyserPingInfo;
 import org.geysermc.connector.ping.IGeyserPingPassthrough;
 
+import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -49,13 +50,13 @@ public class GeyserVelocityPingPassthrough implements IGeyserPingPassthrough {
         ProxyPingEvent event;
         try {
             event = server.getEventManager().fire(new ProxyPingEvent(new GeyserInboundConnection(inetSocketAddress), ServerPing.builder()
-                    .description(server.getConfiguration().getMotd()).onlinePlayers(server.getPlayerCount())
+                    .description(server.getConfiguration().getMotdComponent()).onlinePlayers(server.getPlayerCount())
                     .maximumPlayers(server.getConfiguration().getShowMaxPlayers()).build())).get();
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
         GeyserPingInfo geyserPingInfo = new GeyserPingInfo(
-                LegacyComponentSerializer.legacy('§').serialize(event.getPing().getDescriptionComponent()),
+                LegacyComponentSerializer.legacy().serialize(event.getPing().getDescription(), '§'),
                 new GeyserPingInfo.Players(
                         event.getPing().getPlayers().orElseThrow(IllegalStateException::new).getMax(),
                         event.getPing().getPlayers().orElseThrow(IllegalStateException::new).getOnline()

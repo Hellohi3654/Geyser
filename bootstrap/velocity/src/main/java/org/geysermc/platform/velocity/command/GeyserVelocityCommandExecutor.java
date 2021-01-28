@@ -25,47 +25,37 @@
 
 package org.geysermc.platform.velocity.command;
 
+import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
+import lombok.AllArgsConstructor;
 import org.geysermc.connector.GeyserConnector;
-import org.geysermc.connector.command.CommandExecutor;
 import org.geysermc.connector.command.CommandSender;
 import org.geysermc.connector.command.GeyserCommand;
 import org.geysermc.connector.common.ChatColor;
-import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.utils.LanguageUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class GeyserVelocityCommandExecutor extends CommandExecutor implements SimpleCommand {
+@AllArgsConstructor
+public class GeyserVelocityCommandExecutor implements SimpleCommand {
 
-    public GeyserVelocityCommandExecutor(GeyserConnector connector) {
-        super(connector);
-    }
+    private final GeyserConnector connector;
 
     @Override
     public void execute(Invocation invocation) {
         if (invocation.arguments().length > 0) {
-            GeyserCommand command = getCommand(invocation.arguments()[0]);
-            if (command != null) {
-                CommandSender sender = new VelocityCommandSender(invocation.source());
+            if (getCommand(invocation.arguments()[0]) != null) {
                 if (!invocation.source().hasPermission(getCommand(invocation.arguments()[0]).getPermission())) {
+                    CommandSender sender = new VelocityCommandSender(invocation.source());
                     sender.sendMessage(ChatColor.RED + LanguageUtils.getPlayerLocaleString("geyser.bootstrap.command.permission_fail", sender.getLocale()));
                     return;
                 }
-                GeyserSession session = null;
-                if (command.isBedrockOnly()) {
-                    session = getGeyserSession(sender);
-                    if (session == null) {
-                        sender.sendMessage(ChatColor.RED + LanguageUtils.getPlayerLocaleString("geyser.bootstrap.command.bedrock_only", sender.getLocale()));
-                        return;
-                    }
-                }
-                command.execute(session, sender, invocation.arguments().length > 1 ? Arrays.copyOfRange(invocation.arguments(), 1, invocation.arguments().length) : new String[0]);
+                getCommand(invocation.arguments()[0]).execute(new VelocityCommandSender(invocation.source()), invocation.arguments().length > 1 ? Arrays.copyOfRange(invocation.arguments(), 1, invocation.arguments().length) : new String[0]);
             }
         } else {
-            getCommand("help").execute(null, new VelocityCommandSender(invocation.source()), new String[0]);
+            getCommand("help").execute(new VelocityCommandSender(invocation.source()), new String[0]);
         }
     }
 
@@ -75,5 +65,9 @@ public class GeyserVelocityCommandExecutor extends CommandExecutor implements Si
             return connector.getCommandManager().getCommandNames();
         }
         return new ArrayList<>();
+    }
+
+    private GeyserCommand getCommand(String label) {
+        return connector.getCommandManager().getCommands().get(label);
     }
 }

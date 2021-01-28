@@ -23,24 +23,51 @@
  * @link https://github.com/GeyserMC/Geyser
  */
 
-package org.geysermc.common.window.response;
+package org.geysermc.floodgate.util;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import org.geysermc.common.window.response.FormResponse;
-import org.geysermc.common.window.response.FormResponseData;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 
-import java.util.Map;
+/**
+ * The Operation Systems where Bedrock players can connect with
+ */
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+public enum DeviceOs {
+    UNKNOWN("Unknown"),
+    GOOGLE("Android"),
+    IOS("iOS"),
+    OSX("macOS"),
+    AMAZON("Amazon"),
+    GEARVR("Gear VR"),
+    HOLOLENS("Hololens"),
+    UWP("Windows 10"),
+    WIN32("Windows x86"),
+    DEDICATED("Dedicated"),
+    TVOS("Apple TV"),
+    PS4("PS4"),
+    NX("Switch"),
+    XBOX("Xbox One"),
+    WINDOWS_PHONE("Windows Phone");
 
-@Getter
-@AllArgsConstructor
-public class CustomFormResponse implements FormResponse {
+    private static final DeviceOs[] VALUES = values();
 
-    private Map<Integer, Object> responses;
-    private Map<Integer, FormResponseData> dropdownResponses;
-    private Map<Integer, String> inputResponses;
-    private Map<Integer, Float> sliderResponses;
-    private Map<Integer, FormResponseData> stepSliderResponses;
-    private Map<Integer, Boolean> toggleResponses;
-    private Map<Integer, String> labelResponses;
+    private final String displayName;
+
+    /**
+     * Get the DeviceOs instance from the identifier.
+     *
+     * @param id the DeviceOs identifier
+     * @return The DeviceOs or {@link #UNKNOWN} if the DeviceOs wasn't found
+     */
+    public static DeviceOs getById(int id) {
+        return id < VALUES.length ? VALUES[id] : VALUES[0];
+    }
+
+    /**
+     * @return friendly display name of platform.
+     */
+    @Override
+    public String toString() {
+        return displayName;
+    }
 }
