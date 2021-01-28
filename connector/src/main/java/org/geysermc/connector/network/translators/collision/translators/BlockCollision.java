@@ -115,22 +115,22 @@ public class BlockCollision {
                         b.getMiddleZ());
 
                 double translateDistance = northFacePos.getZ() - relativePlayerPosition.getZ() - (playerCollision.getSizeZ() / 2);
-                if (Math.abs(translateDistance) < CollisionManager.COLLISION_TOLERANCE * 1.1) {
+                if (Math.abs(translateDistance) < CollisionManager.COLLISION_TOLERANCE * 2) {
                     playerCollision.translate(0, 0, translateDistance);
                 }
                 
                 translateDistance = southFacePos.getZ() - relativePlayerPosition.getZ() + (playerCollision.getSizeZ() / 2);
-                if (Math.abs(translateDistance) < CollisionManager.COLLISION_TOLERANCE * 1.1) {
+                if (Math.abs(translateDistance) < CollisionManager.COLLISION_TOLERANCE * 2) {
                     playerCollision.translate(0, 0, translateDistance);
                 }
 
                 translateDistance = eastFacePos.getX() - relativePlayerPosition.getX() + (playerCollision.getSizeX() / 2);
-                if (Math.abs(translateDistance) < CollisionManager.COLLISION_TOLERANCE * 1.1) {
+                if (Math.abs(translateDistance) < CollisionManager.COLLISION_TOLERANCE * 2) {
                     playerCollision.translate(translateDistance, 0, 0);
                 }
 
                 translateDistance = westFacePos.getX() - relativePlayerPosition.getX() - (playerCollision.getSizeX() / 2);
-                if (Math.abs(translateDistance) < CollisionManager.COLLISION_TOLERANCE * 1.1) {
+                if (Math.abs(translateDistance) < CollisionManager.COLLISION_TOLERANCE * 2) {
                     playerCollision.translate(translateDistance, 0, 0);
                 }
             }
@@ -150,23 +150,5 @@ public class BlockCollision {
             }
         }
         return false;
-    }
-
-    public BoundingBox getContainingBoundingBox() {
-        if (boundingBoxes.length == 0) {
-            return null;
-        } else if (boundingBoxes.length == 1) {
-            return boundingBoxes[0].clone();
-        }
-        Vector3d minPos = Vector3d.from(1e6);
-        Vector3d maxPos = Vector3d.ZERO;
-        for (BoundingBox b : boundingBoxes) {
-            minPos = minPos.min(b.getMin());
-            maxPos = maxPos.max(b.getMax());
-        }
-
-        Vector3d size = maxPos.sub(minPos);
-        Vector3d middle = maxPos.add(minPos).div(2);
-        return new BoundingBox(middle.getX(), middle.getY(), middle.getZ(), size.getX(), size.getY(), size.getZ());
     }
 }
