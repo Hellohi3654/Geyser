@@ -38,11 +38,23 @@ public class SettingsCommand extends GeyserCommand {
     }
 
     @Override
-    public void execute(GeyserSession session, CommandSender sender, String[] args) {
-        if (session == null) return;
-
-        SettingsUtils.buildForm(session);
-        session.sendForm(session.getSettingsForm(), SettingsUtils.SETTINGS_FORM_ID);
+    public void execute(CommandSender sender, String[] args) {
+        // Make sure the sender is a Bedrock edition client
+        GeyserSession session = null;
+        if (sender instanceof GeyserSession) {
+            session = (GeyserSession) sender;
+        } else {
+            // Needed for Spigot - sender is not an instance of GeyserSession
+            for (GeyserSession otherSession : connector.getPlayers()) {
+                if (sender.getName().equals(otherSession.getPlayerEntity().getUsername())) {
+                    session = otherSession;
+                    break;
+                }
+            }
+        }
+        if (session != null) {
+            session.sendForm(SettingsUtils.buildForm(session));
+        }
     }
 
     @Override
