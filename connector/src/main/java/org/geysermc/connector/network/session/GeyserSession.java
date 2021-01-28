@@ -540,7 +540,6 @@ public class GeyserSession implements CommandSender {
                 MsaAuthenticationService msaAuthenticationService = new MsaAuthenticationService(GeyserConnector.OAUTH_CLIENT_ID);
 
                 MsaAuthenticationService.MsCodeResponse response = msaAuthenticationService.getAuthCode();
-                LoginEncryptionUtils.showMicrosoftCodeWindow(this, response);
 
                 // This just looks cool
                 SetTimePacket packet = new SetTimePacket();
