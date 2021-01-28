@@ -87,7 +87,7 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
         asset_path: bootstrap/standalone/target/Geyser.jar
-        asset_name: Geyser-Serverinventory.jar
+        asset_name: Geyser.jar
         asset_content_type: application/zip
 
     - name: Upload Release Asset 2
@@ -98,7 +98,7 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
         asset_path: bootstrap/spigot/target/Geyser-Spigot.jar
-        asset_name: Geyser-Spigot-Serverinventory.jar
+        asset_name: Geyser-Spigot.jar
         asset_content_type: application/zip
         
     - name: Upload Release Asset 3
@@ -109,7 +109,7 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
         asset_path: bootstrap/bungeecord/target/Geyser-BungeeCord.jar
-        asset_name: Geyser-BungeeCord-Serverinventory.jar
+        asset_name: Geyser-BungeeCord.jar
         asset_content_type: application/zip
     
     - name: Upload Release Asset 4
@@ -120,7 +120,7 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
         asset_path: bootstrap/sponge/target/Geyser-Sponge.jar
-        asset_name: Geyser-Sponge-Serverinventory.jar
+        asset_name: Geyser-Sponge.jar
         asset_content_type: application/zip
     
     - name: Upload Release Asset 5
@@ -131,5 +131,5 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
         asset_path: bootstrap/velocity/target/Geyser-Velocity.jar
-        asset_name: Geyser-Velocity-Serverinventory.jar
+        asset_name: Geyser-Velocity.jar
         asset_content_type: application/zip
