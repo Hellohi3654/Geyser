@@ -85,7 +85,7 @@ public class PistonBlockEntity {
     static {
         // Create a ~1 x ~0.5 x ~1 bounding box above the honey block
         BlockCollision blockCollision = CollisionTranslator.getCollision(BlockTranslator.JAVA_RUNTIME_HONEY_BLOCK_ID, 0, 0, 0);
-        BoundingBox blockBoundingBox = blockCollision.getContainingBoundingBox();
+        BoundingBox blockBoundingBox = blockCollision.getBoundingBoxes()[0];
 
         double honeyHeight = blockBoundingBox.getMax().getY();
         double boundingBoxHeight = 1.5 - honeyHeight;
@@ -119,7 +119,11 @@ public class PistonBlockEntity {
      *
      * @param action Pulling or Pushing
      */
-    public void setAction(PistonValueType action) {
+    public synchronized void setAction(PistonValueType action) {
+        if (isDone()) {
+            finishMovingBlocks();
+            attachedBlocks.clear();
+        }
         this.action = action;
         if (action == PistonValueType.PUSHING || (action == PistonValueType.PULLING && sticky)) {
             // Blocks only move when pushing or pulling with sticky pistons
@@ -127,6 +131,18 @@ public class PistonBlockEntity {
             removeBlocks();
             createMovingBlocks();
         }
+
+        // Set progress and lastProgress to allow 0 tick pistons to animate
+        switch (action) {
+            case PUSHING:
+                progress = 0;
+                break;
+            case PULLING:
+            case CANCELLED_MID_PUSH:
+                progress = 1;
+                break;
+        }
+        lastProgress = progress;
 
         lastProgressUpdate = System.currentTimeMillis();
 
@@ -136,7 +152,7 @@ public class PistonBlockEntity {
     /**
      * Update the position of the piston head, moving blocks, and players.
      */
-    public void updateMovement() {
+    public synchronized void updateMovement() {
         if (isDone()) {
             return;
         }
@@ -148,7 +164,7 @@ public class PistonBlockEntity {
     /**
      * Place attached blocks in their final position when done pushing or pulling
      */
-    public void updateBlocks() {
+    public synchronized void updateBlocks() {
         if (!isDone()) {
             if (action == PistonValueType.CANCELLED_MID_PUSH) {
                 finishMovingBlocks();
@@ -203,7 +219,7 @@ public class PistonBlockEntity {
         }
 
         boolean moveBlocks = true;
-        while (!blocksToCheck.isEmpty() && attachedBlocks.size() < 12) {
+        while (!blocksToCheck.isEmpty() && attachedBlocks.size() <= 12) {
             Vector3i blockPos = blocksToCheck.remove();
             // Skip blocks we've already checked
             if (blocksChecked.contains(blockPos)) {
@@ -255,7 +271,6 @@ public class PistonBlockEntity {
                 break;
             }
         }
-        // This shouldn't happen as the server does all of these checks before sending a block value packet
         if (!moveBlocks || attachedBlocks.size() > 12) {
             attachedBlocks.clear();
         }
@@ -326,7 +341,7 @@ public class PistonBlockEntity {
      */
     private Vector3i getMovement() {
         if (action == PistonValueType.PULLING) {
-            return orientation.getUnitVector().negate();
+            return orientation.reversed().getUnitVector();
         }
         return orientation.getUnitVector(); // PUSHING and CANCELLED_MID_PUSH
     }
@@ -347,7 +362,7 @@ public class PistonBlockEntity {
      *
      * If the player contacts a slime block, playerMotion in PistonCache is updated
      */
-    public void pushPlayer() {
+    public synchronized void pushPlayer() {
         Vector3i direction = orientation.getUnitVector();
         double movementProgress = lastProgress;
         if (action == PistonValueType.PULLING || action == PistonValueType.CANCELLED_MID_PUSH) {
@@ -463,17 +478,6 @@ public class PistonBlockEntity {
         session.getPistonCache().setPlayerMotion(Vector3f.from(motionX, motionY, motionZ));
     }
 
-    private boolean testBlockCollision(Vector3d blockPos, BlockCollision blockCollision, BoundingBox boundingBox, Vector3d extend) {
-        if (blockCollision != null) {
-            BoundingBox blockBoundingBox = blockCollision.getContainingBoundingBox();
-            if (boundingBox != null) {
-                blockBoundingBox.extend(extend);
-                return blockBoundingBox.checkIntersection(blockPos, boundingBox);
-            }
-        }
-        return false;
-    }
-
     /**
      * Get the distance required to move boundingBoxA to one of boundingBoxB's sides
      *
@@ -504,9 +508,6 @@ public class PistonBlockEntity {
     }
 
     private double getBlockIntersection(Vector3d blockPos, BlockCollision blockCollision, BoundingBox boundingBox, Vector3d extend, Direction direction) {
-        if (!testBlockCollision(blockPos, blockCollision, boundingBox, extend)) {
-            return 0;
-        }
         Direction oppositeDirection = direction.reversed();
         double maxIntersection = 0;
         for (BoundingBox b : blockCollision.getBoundingBoxes()) {
@@ -526,13 +527,8 @@ public class PistonBlockEntity {
     private void resolveCollision(Vector3d startingPos, double movementProgress, int javaId, BoundingBox playerBoundingBox) {
         PistonCache pistonCache = session.getPistonCache();
 
-        Direction movementDirection = orientation;
-        if (action == PistonValueType.PULLING) {
-            movementDirection = orientation.reversed();
-        }
         Vector3d movement = getMovement().toDouble();
 
-        BlockCollision blockCollision = CollisionTranslator.getCollision(javaId, 0, 0, 0);
         // Check if the player collides with the movingBlock block entity
         Vector3d finalBlockPos = startingPos.add(movement);
         if (SOLID_BOUNDING_BOX.checkIntersection(finalBlockPos, playerBoundingBox)) {
@@ -552,15 +548,23 @@ public class PistonBlockEntity {
             pistonCache.setPlayerDisplacement(totalDisplacement);
         } else {
             // Move the player out of collision
-            Vector3d extend = movement.mul(Math.min(1 - movementProgress, 0.5));
-            double intersection = getBlockIntersection(blockPos, blockCollision, playerBoundingBox, extend, movementDirection);
-            if (intersection > 0) {
-                Vector3d displacement = movement.mul(intersection + 0.01d);
-                Vector3d totalDisplacement = pistonCache.getPlayerDisplacement().add(displacement);
-                pistonCache.setPlayerDisplacement(totalDisplacement);
+            BlockCollision blockCollision = CollisionTranslator.getCollision(javaId, 0, 0, 0);
+            if (blockCollision != null) {
+                Vector3d extend = movement.mul(Math.min(1 - movementProgress, 0.5));
+                Direction movementDirection = orientation;
+                if (action == PistonValueType.PULLING) {
+                    movementDirection = orientation.reversed();
+                }
 
-                if (javaId == BlockTranslator.JAVA_RUNTIME_SLIME_BLOCK_ID) {
-                    applySlimeBlockMotion(blockPos, Vector3d.from(playerBoundingBox.getMiddleX(), playerBoundingBox.getMiddleY(), playerBoundingBox.getMiddleZ()));
+                double intersection = getBlockIntersection(blockPos, blockCollision, playerBoundingBox, extend, movementDirection);
+                if (intersection > 0) {
+                    Vector3d displacement = movement.mul(intersection + 0.01d);
+                    Vector3d totalDisplacement = pistonCache.getPlayerDisplacement().add(displacement);
+                    pistonCache.setPlayerDisplacement(totalDisplacement);
+
+                    if (javaId == BlockTranslator.JAVA_RUNTIME_SLIME_BLOCK_ID) {
+                        applySlimeBlockMotion(blockPos, Vector3d.from(playerBoundingBox.getMiddleX(), playerBoundingBox.getMiddleY(), playerBoundingBox.getMiddleZ()));
+                    }
                 }
             }
         }
@@ -600,7 +604,8 @@ public class PistonBlockEntity {
     }
 
     /**
-     * Replace all moving block entities with the final block
+     * Detach moving blocks from the piston
+     * The Java server handles placing the new blocks for the player
      */
     private void finishMovingBlocks() {
         Vector3i movement = getMovement();
@@ -608,12 +613,6 @@ public class PistonBlockEntity {
             blockPos = blockPos.add(movement);
             // Send a final block entity packet to detach blocks
             BlockEntityUtils.updateBlockEntity(session, buildMovingBlockTag(blockPos, javaId, Vector3i.from(0, -1, 0)), blockPos);
-            // Replace with final block
-            ChunkUtils.updateBlock(session, javaId, blockPos);
-            // Send piston block entity data
-            if (PistonBlockEntityTranslator.isBlock(javaId)) {
-                BlockEntityUtils.updateBlockEntity(session, PistonBlockEntityTranslator.getTag(javaId, blockPos), blockPos);
-            }
         });
     }
 
