@@ -140,7 +140,7 @@ public class GeyserConnector {
         this.platformType = platformType;
 
         logger.info("******************************************");
-        logger.info("");
+        logger.info("Floodgate 2.0 TEST");
         logger.info(LanguageUtils.getLocaleStringLog("geyser.core.load", NAME, VERSION));
         logger.info("");
         logger.info("******************************************");
