@@ -12,10 +12,10 @@
 
 - Bedrock:
 - IP: play.voltiac.xyz
-- Port: 19148
+- Port: 19132
 
 - Java:
-- Server Address: play.voltiac.xyz:19148
+- Server Address: play.voltiac.xyz
 
 ## The bundabrg-bleeding branch is a combination of many different geyser forks / PRs
 - Don't message geyser devs if you find a problem
