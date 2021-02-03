@@ -436,7 +436,6 @@ public class GeyserSession implements CommandSender {
 
         this.playerEntity = new SessionPlayerEntity(this);
         this.worldCache = new WorldCache(this);
-        this.windowCache = new WindowCache(this);
 
         this.playerInventory = new PlayerInventory();
         this.openInventory = null;
