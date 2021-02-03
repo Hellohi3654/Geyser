@@ -23,40 +23,13 @@
  * @link https://github.com/GeyserMC/Geyser
  */
 
-package org.geysermc.common.window.button;
+package org.geysermc.floodgate.util;
 
 import lombok.Getter;
 import lombok.Setter;
 
-public class FormImage {
-
+public class FloodgateConfigHolder {
     @Getter
     @Setter
-    private String type;
-
-    @Getter
-    @Setter
-    private String data;
-
-    public FormImage(FormImageType type, String data) {
-        this.type = type.getName();
-        this.data = data;
-    }
-
-    public enum FormImageType {
-        PATH("path"),
-        URL("url");
-
-        @Getter
-        private String name;
-
-        FormImageType(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public String toString() {
-            return name;
-        }
-    }
+    private static Object config;
 }
