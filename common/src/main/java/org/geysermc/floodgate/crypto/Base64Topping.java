@@ -23,15 +23,18 @@
  * @link https://github.com/GeyserMC/Geyser
  */
 
-package org.geysermc.common.window.response;
+package org.geysermc.floodgate.crypto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import java.util.Base64;
 
-@AllArgsConstructor
-@Getter
-public class FormResponseData {
+public final class Base64Topping implements Topping {
+    @Override
+    public byte[] encode(byte[] data) {
+        return Base64.getEncoder().encode(data);
+    }
 
-    private int elementID;
-    private String elementContent;
+    @Override
+    public byte[] decode(byte[] data) {
+        return Base64.getDecoder().decode(data);
+    }
 }
