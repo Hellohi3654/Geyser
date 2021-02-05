@@ -49,6 +49,7 @@ public class BlockTranslator {
      * The Java block runtime ID of air
      */
     public static final int JAVA_AIR_ID = 0;
+    public static final int JAVA_WATER_ID;
     /**
      * The Bedrock block runtime ID of air
      */
@@ -145,7 +146,11 @@ public class BlockTranslator {
             throw new AssertionError("Unable to load Java block mappings", e);
         }
 
-        int waterRuntimeId = -1;
+        Reflections ref = GeyserConnector.getInstance().useXmlReflections() ? FileUtils.getReflections("org.geysermc.connector.network.translators.world.block.entity")
+                : new Reflections("org.geysermc.connector.network.translators.world.block.entity");
+
+        int javaWaterRuntimeId = -1;
+        int bedrockWaterRuntimeId = -1;
         int javaRuntimeId = -1;
         int airRuntimeId = -1;
         int cobwebRuntimeId = -1;
@@ -232,7 +237,8 @@ public class BlockTranslator {
             }
 
             if ("minecraft:water[level=0]".equals(javaId)) {
-                waterRuntimeId = bedrockRuntimeId;
+                bedrockWaterRuntimeId = bedrockRuntimeId;
+                javaWaterRuntimeId = javaRuntimeId;
             }
             boolean waterlogged = entry.getKey().contains("waterlogged=true")
                     || javaId.contains("minecraft:bubble_column") || javaId.contains("minecraft:kelp") || javaId.contains("seagrass");
@@ -301,10 +307,15 @@ public class BlockTranslator {
         }
         JAVA_RUNTIME_SPAWNER_ID = spawnerRuntimeId;
 
-        if (waterRuntimeId == -1) {
-            throw new AssertionError("Unable to find water in palette");
+        if (bedrockWaterRuntimeId == -1) {
+            throw new AssertionError("Unable to find Bedrock water in palette");
         }
-        BEDROCK_WATER_ID = waterRuntimeId;
+        BEDROCK_WATER_ID = bedrockWaterRuntimeId;
+
+        if (javaWaterRuntimeId == -1) {
+            throw new AssertionError("Unable to find Java water in palette");
+        }
+        JAVA_WATER_ID = javaWaterRuntimeId;
 
         if (airRuntimeId == -1) {
             throw new AssertionError("Unable to find air in palette");
