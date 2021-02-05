@@ -37,6 +37,7 @@ import lombok.Setter;
 import org.geysermc.connector.entity.player.PlayerEntity;
 import org.geysermc.connector.entity.type.EntityType;
 import org.geysermc.connector.network.session.GeyserSession;
+import org.geysermc.connector.network.session.cache.PistonCache;
 import org.geysermc.connector.network.translators.collision.translators.BlockCollision;
 
 import java.util.ArrayList;
@@ -138,6 +139,9 @@ public class CollisionManager {
             // With chunk caching, we can do some proper collision checks
             updatePlayerBoundingBox(position);
 
+            PistonCache pistonCache = session.getPistonCache();
+            pistonCache.correctPlayerPosition();
+
             // Correct player position
             if (!correctPlayerPosition()) {
                 // Cancel the movement if it needs to be cancelled
@@ -145,9 +149,12 @@ public class CollisionManager {
                 return null;
             }
 
-            position = Vector3d.from(playerBoundingBox.getMiddleX(),
-                    playerBoundingBox.getMiddleY() - (playerBoundingBox.getSizeY() / 2),
-                    playerBoundingBox.getMiddleZ());
+            position = playerBoundingBox.getBottomCenter();
+
+            // Send corrected position to Bedrock when pushed by a piston
+            if (!pistonCache.getPlayerDisplacement().equals(Vector3d.ZERO)) {
+                pistonCache.sendPlayerMovement(false);
+            }
         } else {
             // When chunk caching is off, we have to rely on this
             // It rounds the Y position up to the nearest 0.5
@@ -196,7 +203,9 @@ public class CollisionManager {
         int minCollisionZ = (int) Math.floor(position.getZ() - ((playerBoundingBox.getSizeZ() / 2) + COLLISION_TOLERANCE));
         int maxCollisionZ = (int) Math.floor(position.getZ() + (playerBoundingBox.getSizeZ() / 2) + COLLISION_TOLERANCE);
 
-        for (int y = minCollisionY; y < maxCollisionY + 1; y++) {
+        // Blocks are checked from top to bottom to prevent players from being pushed up
+        // onto slabs that you can't stand on
+        for (int y = maxCollisionY; y >= minCollisionY; y--) {
             for (int x = minCollisionX; x < maxCollisionX + 1; x++) {
                 for (int z = minCollisionZ; z < maxCollisionZ + 1; z++) {
                     blocks.add(Vector3i.from(x, y, z));
