@@ -152,19 +152,19 @@ public class CollisionManager {
                 recalculatePosition();
                 return null;
             }
+			
+			position = playerBoundingBox.getBottomCenter();
 
             // Send corrected position to Bedrock when pushed by a piston
             if (!pistonCache.getPlayerDisplacement().equals(Vector3d.ZERO)) {
                 pistonCache.sendPlayerMovement(false);
-
-            position = Vector3d.from(playerBoundingBox.getMiddleX(),
-                    playerBoundingBox.getMiddleY() - (playerBoundingBox.getSizeY() / 2),
-                    playerBoundingBox.getMiddleZ());
+            }
 
             if (!onGround) {
                 // Trim the position to prevent rounding errors that make Java think we are clipping into a block
                 position = Vector3d.from(position.getX(), Double.parseDouble(DECIMAL_FORMAT.format(position.getY())), position.getZ());
             }
+			
         } else {
             // When chunk caching is off, we have to rely on this
             // It rounds the Y position up to the nearest 0.5
