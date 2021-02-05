@@ -85,6 +85,10 @@
                                     <pattern>net.kyori.adventure.text.serializer.gson.legacyimpl</pattern>
                                     <shadedPattern>org.geysermc.platform.velocity.shaded.kyori.legacyimpl</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>org.objectweb.asm</pattern>
+                                    <shadedPattern>org.geysermc.platform.velocity.shaded.objectweb.asm</shadedPattern>
+                                </relocation>
                             </relocations>
                         </configuration>
                     </execution>

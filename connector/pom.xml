@@ -120,7 +120,7 @@
         <dependency>
             <groupId>com.github.steveice10</groupId>
             <artifactId>mcprotocollib</artifactId>
-            <version>26201a4</version>
+            <version>62721cf</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
@@ -206,9 +206,63 @@
             <artifactId>MCAuthLib</artifactId>
             <version>0e48a094f2</version>
         </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>9.0-beta</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-commons</artifactId>
+            <version>9.0-beta</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>default</id>
+            <properties>
+                <sourceDirectory>src/main/java</sourceDirectory>
+            </properties>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+        <profile>
+            <id>documentation</id>
+            <properties>
+                <sourceDirectory>${project.build.directory}/delombok</sourceDirectory>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok-maven-plugin</artifactId>
+                        <version>1.18.12.0</version>
+                        <executions>
+                            <execution>
+                                <id>delombok</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>delombok</goal>
+                                </goals>
+                                <configuration>
+                                    <addOutputDirectory>false</addOutputDirectory>
+                                    <sourceDirectory>src/main/java</sourceDirectory>
+                                    <outputDirectory>${project.build.directory}/delombok</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <build>
+        <sourceDirectory>${sourceDirectory}</sourceDirectory>
         <plugins>
             <plugin>
                 <groupId>pl.project13.maven</groupId>
