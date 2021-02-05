@@ -60,12 +60,17 @@ import org.geysermc.connector.utils.DimensionUtils;
 import org.geysermc.connector.utils.LanguageUtils;
 import org.geysermc.connector.utils.LocaleUtils;
 import org.geysermc.connector.utils.ResourcePack;
+import org.geysermc.floodgate.crypto.AesCipher;
+import org.geysermc.floodgate.crypto.AesKeyProducer;
+import org.geysermc.floodgate.crypto.Base64Topping;
+import org.geysermc.floodgate.crypto.FloodgateCipher;
 
 import javax.naming.directory.Attribute;
 import javax.naming.directory.InitialDirContext;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.security.Key;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -101,6 +106,8 @@ public class GeyserConnector {
     private RemoteServer remoteServer;
     @Setter
     private AuthType authType;
+
+    private FloodgateCipher cipher;
 
     private boolean shuttingDown = false;
 
@@ -190,6 +197,17 @@ public class GeyserConnector {
         remoteServer = new RemoteServer(config.getRemote().getAddress(), remotePort);
         authType = AuthType.getByName(config.getRemote().getAuthType());
 
+        if (authType == AuthType.FLOODGATE) {
+            try {
+                Key key = new AesKeyProducer().produceFrom(config.getFloodgateKeyPath());
+                cipher = new AesCipher(new Base64Topping());
+                cipher.init(key);
+                logger.info(LanguageUtils.getLocaleStringLog("geyser.auth.floodgate.loaded_key"));
+            } catch (Exception exception) {
+                logger.severe(LanguageUtils.getLocaleStringLog("geyser.auth.floodgate.bad_key"), exception);
+            }
+        }
+
         DimensionUtils.changeBedrockNetherId(config.isAboveBedrockNetherBuilding()); // Apply End dimension ID workaround to Nether
         SkullBlockEntityTranslator.ALLOW_CUSTOM_SKULLS = config.isAllowCustomSkulls();
 
@@ -221,7 +239,7 @@ public class GeyserConnector {
                 for (GeyserSession session : players) {
                     if (session == null) continue;
                     if (session.getClientData() == null) continue;
-                    String os = session.getClientData().getDeviceOS().toString();
+                    String os = session.getClientData().getDeviceOs().toString();
                     if (!valueMap.containsKey(os)) {
                         valueMap.put(os, 1);
                     } else {
