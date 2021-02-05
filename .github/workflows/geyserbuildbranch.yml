@@ -73,8 +73,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: Floodgate2.0_v${{ github.run_number }}
-        release_name: Floodgate2.0_v${{ github.run_number }}
+        tag_name: New-Floodgate2.0_v${{ github.run_number }}
+        release_name: New-Floodgate2.0_v${{ github.run_number }}
         body: "This is a test branch expect bugs and glitches. Please use Bleeding releases for a more stable experience"
         draft: false
         prerelease: false
