@@ -25,17 +25,40 @@
 
 package org.geysermc.connector.network.translators.inventory.translators;
 
+import com.github.steveice10.mc.protocol.data.game.window.WindowType;
 import com.nukkitx.protocol.bedrock.data.inventory.ContainerSlotType;
 import com.nukkitx.protocol.bedrock.data.inventory.ContainerType;
+import com.nukkitx.protocol.bedrock.packet.ContainerOpenPacket;
+import org.geysermc.connector.inventory.Generic3X3Container;
+import org.geysermc.connector.inventory.Inventory;
+import org.geysermc.connector.inventory.PlayerInventory;
+import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.inventory.BedrockContainerSlot;
 import org.geysermc.connector.network.translators.inventory.updater.ContainerInventoryUpdater;
 
 /**
- * Implemented on top of any block that does not have special properties implemented
+ * Droppers and dispensers
  */
-public class GenericBlockInventoryTranslator extends AbstractBlockInventoryTranslator {
-    public GenericBlockInventoryTranslator(int size, String javaBlockIdentifier, ContainerType containerType) {
-        super(size, javaBlockIdentifier, containerType, ContainerInventoryUpdater.INSTANCE);
+public class Generic3X3InventoryTranslator extends AbstractBlockInventoryTranslator {
+    public Generic3X3InventoryTranslator() {
+        super(9, "minecraft:dispenser[facing=north,triggered=false]", ContainerType.DISPENSER, ContainerInventoryUpdater.INSTANCE,
+                "minecraft:dropper");
+    }
+
+    @Override
+    public Inventory createInventory(String name, int windowId, WindowType windowType, PlayerInventory playerInventory) {
+        return new Generic3X3Container(name, windowId, this.size, playerInventory);
+    }
+
+    @Override
+    public void openInventory(GeyserSession session, Inventory inventory) {
+        ContainerOpenPacket containerOpenPacket = new ContainerOpenPacket();
+        containerOpenPacket.setId((byte) inventory.getId());
+        // Required for opening the real block - otherwise, if the container type is incorrect, it refuses to open
+        containerOpenPacket.setType(((Generic3X3Container) inventory).isDropper() ? ContainerType.DROPPER : ContainerType.DISPENSER);
+        containerOpenPacket.setBlockPosition(inventory.getHolderPosition());
+        containerOpenPacket.setUniqueEntityId(inventory.getHolderId());
+        session.sendUpstreamPacket(containerOpenPacket);
     }
 
     @Override

@@ -48,7 +48,8 @@ import org.geysermc.connector.network.translators.item.ItemTranslator;
 
 public class AnvilInventoryTranslator extends AbstractBlockInventoryTranslator {
     public AnvilInventoryTranslator() {
-        super(3, "minecraft:anvil[facing=north]", ContainerType.ANVIL, UIInventoryUpdater.INSTANCE);
+        super(3, "minecraft:anvil[facing=north]", ContainerType.ANVIL, UIInventoryUpdater.INSTANCE,
+                "minecraft:chipped_anvil", "minecraft:damaged_anvil");
     }
 
     /* 1.16.100 support start */
@@ -102,14 +103,14 @@ public class AnvilInventoryTranslator extends AbstractBlockInventoryTranslator {
 
     @Override
     public int bedrockSlotToJava(StackRequestSlotInfoData slotInfoData) {
-        if (slotInfoData.getContainer() == ContainerSlotType.ANVIL_INPUT) {
-            return 0;
-        }
-        if (slotInfoData.getContainer() == ContainerSlotType.ANVIL_MATERIAL) {
-            return 1;
-        }
-        if (slotInfoData.getContainer() == ContainerSlotType.ANVIL_RESULT || slotInfoData.getContainer() == ContainerSlotType.CREATIVE_OUTPUT) {
-            return 2;
+        switch (slotInfoData.getContainer()) {
+            case ANVIL_INPUT:
+                return 0;
+            case ANVIL_MATERIAL:
+                return 1;
+            case ANVIL_RESULT:
+            case CREATIVE_OUTPUT:
+                return 2;
         }
         return super.bedrockSlotToJava(slotInfoData);
     }
