@@ -1013,7 +1013,7 @@ public class GeyserSession implements CommandSender {
         settings.setRewindHistorySize(0);
         settings.setServerAuthoritativeBlockBreaking(false);
         startGamePacket.setPlayerMovementSettings(settings);
-
+		
         upstream.sendPacket(startGamePacket);
     }
 
