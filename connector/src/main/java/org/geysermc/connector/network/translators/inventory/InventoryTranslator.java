@@ -39,10 +39,10 @@ import com.nukkitx.protocol.bedrock.data.inventory.stackrequestactions.*;
 import com.nukkitx.protocol.bedrock.packet.ItemStackResponsePacket;
 import it.unimi.dsi.fastutil.ints.*;
 import lombok.AllArgsConstructor;
-import org.geysermc.connector.event.EventManager;
-import org.geysermc.connector.event.events.registry.InventoryTranslatorRegistryEvent;
 import org.geysermc.connector.inventory.CartographyContainer;
 import org.geysermc.connector.inventory.GeyserItemStack;
+import org.geysermc.connector.event.EventManager;
+import org.geysermc.connector.event.events.registry.InventoryTranslatorRegistryEvent;
 import org.geysermc.connector.inventory.Inventory;
 import org.geysermc.connector.inventory.PlayerInventory;
 import org.geysermc.connector.network.session.GeyserSession;
@@ -61,7 +61,7 @@ import java.util.*;
 @AllArgsConstructor
 public abstract class InventoryTranslator {
 
-	public static final InventoryTranslator PLAYER_INVENTORY_TRANSLATOR = new PlayerInventoryTranslator();
+    public static final InventoryTranslator PLAYER_INVENTORY_TRANSLATOR = new PlayerInventoryTranslator();
     public static final Map<WindowType, InventoryTranslator> INVENTORY_TRANSLATORS = EventManager.getInstance()
             .triggerEvent(new InventoryTranslatorRegistryEvent(new HashMap<WindowType, InventoryTranslator>() {
         {
@@ -98,12 +98,10 @@ public abstract class InventoryTranslator {
             /* Generics */
             put(WindowType.GENERIC_3X3, new Generic3X3InventoryTranslator());
             put(WindowType.HOPPER, new HopperInventoryTranslator());
-			
-			/* Lectern */
+
+            /* Lectern */
             put(WindowType.LECTERN, new LecternInventoryTranslator());
         }})).getEvent().getRegisteredTranslators();
-        }
-    };
 
     public static final int PLAYER_INVENTORY_SIZE = 36;
     public static final int PLAYER_INVENTORY_OFFSET = 9;
