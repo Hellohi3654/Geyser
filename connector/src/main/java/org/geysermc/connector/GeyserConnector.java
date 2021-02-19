@@ -61,12 +61,22 @@ import org.geysermc.connector.network.translators.world.block.entity.BlockEntity
 import org.geysermc.connector.network.translators.world.block.entity.SkullBlockEntityTranslator;
 import org.geysermc.connector.event.events.geyser.GeyserStopEvent;
 import org.geysermc.connector.utils.*;
+import org.geysermc.connector.skin.FloodgateSkinUploader;
+import org.geysermc.connector.utils.DimensionUtils;
+import org.geysermc.connector.utils.LanguageUtils;
+import org.geysermc.connector.utils.LocaleUtils;
+import org.geysermc.connector.utils.ResourcePack;
+import org.geysermc.floodgate.crypto.AesCipher;
+import org.geysermc.floodgate.crypto.AesKeyProducer;
+import org.geysermc.floodgate.crypto.Base64Topping;
+import org.geysermc.floodgate.crypto.FloodgateCipher;
 
 import javax.naming.directory.Attribute;
 import javax.naming.directory.InitialDirContext;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.security.Key;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -103,6 +113,9 @@ public class GeyserConnector {
     private RemoteServer remoteServer;
     @Setter
     private AuthType authType;
+
+    private FloodgateCipher cipher;
+    private FloodgateSkinUploader skinUploader;
 
     private boolean shuttingDown = false;
 
@@ -201,6 +214,19 @@ public class GeyserConnector {
         authType = AuthType.getByName(config.getRemote().getAuthType());
 
         CooldownUtils.setShowCooldown(config.isShowCooldown());
+
+        if (authType == AuthType.FLOODGATE) {
+            try {
+                Key key = new AesKeyProducer().produceFrom(config.getFloodgateKeyPath());
+                cipher = new AesCipher(new Base64Topping());
+                cipher.init(key);
+                logger.info(LanguageUtils.getLocaleStringLog("geyser.auth.floodgate.loaded_key"));
+                skinUploader = new FloodgateSkinUploader(this).start();
+            } catch (Exception exception) {
+                logger.severe(LanguageUtils.getLocaleStringLog("geyser.auth.floodgate.bad_key"), exception);
+            }
+        }
+
         DimensionUtils.changeBedrockNetherId(config.isAboveBedrockNetherBuilding()); // Apply End dimension ID workaround to Nether
         SkullBlockEntityTranslator.ALLOW_CUSTOM_SKULLS = config.isAllowCustomSkulls();
 
@@ -238,7 +264,7 @@ public class GeyserConnector {
                 for (GeyserSession session : players) {
                     if (session == null) continue;
                     if (session.getClientData() == null) continue;
-                    String os = session.getClientData().getDeviceOS().toString();
+                    String os = session.getClientData().getDeviceOs().toString();
                     if (!valueMap.containsKey(os)) {
                         valueMap.put(os, 1);
                     } else {
