@@ -115,6 +115,7 @@ import org.geysermc.floodgate.util.EncryptionUtil;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -481,7 +482,8 @@ public class GeyserSession implements CommandSender {
         bedrockServerSession.addDisconnectHandler(disconnectReason -> {
             EventManager.getInstance().triggerEvent(new SessionDisconnectEvent(this, disconnectReason));
 
-            connector.getLogger().info(LanguageUtils.getLocaleStringLog("geyser.network.disconnect", bedrockServerSession.getAddress().getAddress(), disconnectReason));
+            InetAddress address = bedrockServerSession.getRealAddress().getAddress();
+            connector.getLogger().info(LanguageUtils.getLocaleStringLog("geyser.network.disconnect", address, disconnectReason));
 
             disconnect(disconnectReason.name());
             connector.removePlayer(this);
@@ -695,7 +697,7 @@ public class GeyserSession implements CommandSender {
                                 clientData.getDeviceOS().ordinal(),
                                 clientData.getLanguageCode(),
                                 clientData.getCurrentInputMode().ordinal(),
-                                upstream.getSession().getAddress().getAddress().getHostAddress()
+                                upstream.getAddress().getAddress().getHostAddress()
                         ));
                     } catch (Exception e) {
                         connector.getLogger().error(LanguageUtils.getLocaleStringLog("geyser.auth.floodgate.encrypt_fail"), e);
@@ -1004,8 +1006,15 @@ public class GeyserSession implements CommandSender {
         startGamePacket.setItemEntries(ItemRegistry.ITEMS);
         startGamePacket.setVanillaVersion("*");
         startGamePacket.setInventoriesServerAuthoritative(true);
-        startGamePacket.setAuthoritativeMovementMode(AuthoritativeMovementMode.CLIENT);
-        sendUpstreamPacket(startGamePacket);
+        startGamePacket.setAuthoritativeMovementMode(AuthoritativeMovementMode.CLIENT); // can be removed once 1.16.200 support is dropped
+
+        SyncedPlayerMovementSettings settings = new SyncedPlayerMovementSettings();
+        settings.setMovementMode(AuthoritativeMovementMode.CLIENT);
+        settings.setRewindHistorySize(0);
+        settings.setServerAuthoritativeBlockBreaking(false);
+        startGamePacket.setPlayerMovementSettings(settings);
+
+        upstream.sendPacket(startGamePacket);
     }
 
     /**
