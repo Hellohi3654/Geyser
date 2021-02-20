@@ -61,12 +61,6 @@ public class BedrockNetworkStackLatencyTranslator extends PacketTranslator<Netwo
             session.sendDownstreamPacket(new ClientKeepAlivePacket(pingId));
         }
 
-        // negative timestamps are used as hack to fix the url image loading bug
-        if (packet.getTimestamp() > 0) {
-            session.sendDownstreamPacket(new ClientKeepAlivePacket(pingId));
-            return;
-        }
-
         // Hack to fix the url image loading bug
         UpdateAttributesPacket attributesPacket = new UpdateAttributesPacket();
         attributesPacket.setRuntimeEntityId(session.getPlayerEntity().getGeyserId());
