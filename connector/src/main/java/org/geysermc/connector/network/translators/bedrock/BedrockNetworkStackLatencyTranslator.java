@@ -52,7 +52,7 @@ public class BedrockNetworkStackLatencyTranslator extends PacketTranslator<Netwo
             // so apparently, as of 1.16.200
             // PS4 divides the network stack latency timestamp FOR US!!!
             // WTF
-            if (session.getClientData().getDeviceOS().equals(DeviceOS.NX)) {
+            if (session.getClientData().getDeviceOs().equals(DeviceOs.PS4)) {
                 // Ignore the weird DeviceOS, our order is wrong and will be fixed in Floodgate 2.0
                 pingId = packet.getTimestamp();
             } else {
