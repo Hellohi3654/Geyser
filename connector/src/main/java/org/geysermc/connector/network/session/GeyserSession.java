@@ -629,7 +629,7 @@ public class GeyserSession implements CommandSender {
                                 clientData.getLanguageCode(),
                                 clientData.getUiProfile().ordinal(),
                                 clientData.getCurrentInputMode().ordinal(),
-                                upstream.getSession().getAddress().getHostAddress(),
+                                upstream.getSession().getAddress().getAddress().getHostAddress(),
                                 skinUploader.getId(),
                                 skinUploader.getVerifyCode()
                         ).toString());
