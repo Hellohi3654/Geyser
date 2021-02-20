@@ -154,6 +154,8 @@ public class GeyserSession implements CommandSender {
 
     @Setter
     private WorldBorder worldBorder;
+	
+	private final PlayerInventory playerInventory;
     @Setter
     private Inventory openInventory;
 
