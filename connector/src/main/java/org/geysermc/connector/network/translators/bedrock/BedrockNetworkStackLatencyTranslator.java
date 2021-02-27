@@ -47,18 +47,24 @@ public class BedrockNetworkStackLatencyTranslator extends PacketTranslator<Netwo
 
     @Override
     public void translate(NetworkStackLatencyPacket packet, GeyserSession session) {
-        if (session.getConnector().getConfig().isForwardPlayerPing()) {
-            long pingId;
-            // so apparently, as of 1.16.200
-            // PS4 divides the network stack latency timestamp FOR US!!!
-            // WTF
-            if (session.getClientData().getDeviceOs().equals(DeviceOs.PS4)) {
-                // Ignore the weird DeviceOS, our order is wrong and will be fixed in Floodgate 2.0
-                pingId = packet.getTimestamp();
-            } else {
-                pingId = packet.getTimestamp() / 1000;
+        long pingId;
+        // so apparently, as of 1.16.200
+        // PS4 divides the network stack latency timestamp FOR US!!!
+        // WTF
+        if (session.getClientData().getDeviceOs().equals(DeviceOs.PS4)) {
+            // Ignore the weird DeviceOS, our order is wrong and will be fixed in Floodgate 2.0
+            pingId = packet.getTimestamp();
+        } else {
+            pingId = packet.getTimestamp() / 1000;
+        }
+
+        // negative timestamps are used as hack to fix the url image loading bug
+        if (packet.getTimestamp() > 0) {
+            if (session.getConnector().getConfig().isForwardPlayerPing()) {
+                ClientKeepAlivePacket keepAlivePacket = new ClientKeepAlivePacket(pingId);
+                session.sendDownstreamPacket(keepAlivePacket);
             }
-            session.sendDownstreamPacket(new ClientKeepAlivePacket(pingId));
+            return;
         }
 
         // Hack to fix the url image loading bug

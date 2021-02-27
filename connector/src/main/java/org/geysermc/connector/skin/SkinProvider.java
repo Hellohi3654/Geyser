@@ -504,7 +504,7 @@ public class SkinProvider {
         return null;
     }
 
-    private static BufferedImage scale(BufferedImage bufferedImage, int newWidth, int newHeight) {
+    public static BufferedImage scale(BufferedImage bufferedImage, int newWidth, int newHeight) {
         BufferedImage resized = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2 = resized.createGraphics();
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);

@@ -62,10 +62,7 @@ import org.geysermc.connector.network.translators.world.block.entity.SkullBlockE
 import org.geysermc.connector.event.events.geyser.GeyserStopEvent;
 import org.geysermc.connector.utils.*;
 import org.geysermc.connector.skin.FloodgateSkinUploader;
-import org.geysermc.connector.utils.DimensionUtils;
-import org.geysermc.connector.utils.LanguageUtils;
-import org.geysermc.connector.utils.LocaleUtils;
-import org.geysermc.connector.utils.ResourcePack;
+import org.geysermc.connector.utils.*;
 import org.geysermc.floodgate.crypto.AesCipher;
 import org.geysermc.floodgate.crypto.AesKeyProducer;
 import org.geysermc.floodgate.crypto.Base64Topping;
@@ -213,8 +210,6 @@ public class GeyserConnector {
         remoteServer = new RemoteServer(config.getRemote().getAddress(), remotePort);
         authType = AuthType.getByName(config.getRemote().getAuthType());
 
-        CooldownUtils.setShowCooldown(config.isShowCooldown());
-
         if (authType == AuthType.FLOODGATE) {
             try {
                 Key key = new AesKeyProducer().produceFrom(config.getFloodgateKeyPath());
@@ -227,6 +222,7 @@ public class GeyserConnector {
             }
         }
 
+        CooldownUtils.setShowCooldown(config.isShowCooldown());
         DimensionUtils.changeBedrockNetherId(config.isAboveBedrockNetherBuilding()); // Apply End dimension ID workaround to Nether
         SkullBlockEntityTranslator.ALLOW_CUSTOM_SKULLS = config.isAllowCustomSkulls();
 
