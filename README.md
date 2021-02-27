@@ -25,7 +25,7 @@
 * [Native Geyser Extension Support](https://github.com/GeyserMC/Geyser/pull/742)
 * and more
 
-## Also checkout [Server-inventory](https://github.com/Hellohi3654/Geyser/tree/new-server-inventory) and [Floodgate 2.0](https://github.com/Hellohi3654/Geyser/tree/new-floodgate-2.0)
+## Also checkout [Server-inventory](https://github.com/Hellohi3654/Geyser/tree/server-inventory-new) and [Floodgate 2.0](https://github.com/Hellohi3654/Geyser/tree/floodgate-2.0-new)
 
 <img src="https://geysermc.org/img/geyser-1760-860.png" alt="Geyser" width="600"/>
 
