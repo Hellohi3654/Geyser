@@ -182,7 +182,7 @@ public class GeyserSpigotWorldManager extends GeyserWorldManager {
     @Override
     public NbtMap getLecternDataAt(GeyserSession session, int x, int y, int z, boolean isChunkLoad) {
         // Run as a task to prevent async issues
-        Bukkit.getScheduler().runTask(this.plugin, () -> {
+        Runnable lecternInfoGet = () -> {
             Player bukkitPlayer;
             if ((bukkitPlayer = Bukkit.getPlayer(session.getPlayerEntity().getUsername())) == null) {
                 return;
@@ -203,24 +203,40 @@ public class GeyserSpigotWorldManager extends GeyserWorldManager {
                 return;
             }
             BookMeta bookMeta = (BookMeta) itemStack.getItemMeta();
-            NbtMapBuilder lecternTag = LecternInventoryTranslator.getBaseLecternTag(x, y, z, bookMeta.getPageCount());
+            // On the count: allow the book to show/open even there are no pages. We know there is a book here, after all, and this matches Java behavior
+            boolean hasBookPages = bookMeta.getPageCount() > 0;
+            NbtMapBuilder lecternTag = LecternInventoryTranslator.getBaseLecternTag(x, y, z, hasBookPages ? bookMeta.getPageCount() : 1);
             lecternTag.putInt("page", lectern.getPage() / 2);
             NbtMapBuilder bookTag = NbtMap.builder()
                     .putByte("Count", (byte) itemStack.getAmount())
                     .putShort("Damage", (short) 0)
                     .putString("Name", "minecraft:writable_book");
-            List<NbtMap> pages = new ArrayList<>();
-            for (String page : bookMeta.getPages()) {
+            List<NbtMap> pages = new ArrayList<>(bookMeta.getPageCount());
+            if (hasBookPages) {
+                for (String page : bookMeta.getPages()) {
+                    NbtMapBuilder pageBuilder = NbtMap.builder()
+                            .putString("photoname", "")
+                            .putString("text", page);
+                    pages.add(pageBuilder.build());
+                }
+            } else {
+                // Empty page
                 NbtMapBuilder pageBuilder = NbtMap.builder()
                         .putString("photoname", "")
-                        .putString("text", page);
+                        .putString("text", "");
                 pages.add(pageBuilder.build());
             }
             bookTag.putCompound("tag", NbtMap.builder().putList("pages", NbtType.COMPOUND, pages).build());
             lecternTag.putCompound("book", bookTag.build());
             NbtMap blockEntityTag = lecternTag.build();
             BlockEntityUtils.updateBlockEntity(session, blockEntityTag, Vector3i.from(x, y, z));
-        });
+        };
+        if (isChunkLoad) {
+            // Delay to ensure the chunk is sent first, and then the lectern data
+            Bukkit.getScheduler().runTaskLater(this.plugin, lecternInfoGet, 5);
+        } else {
+            Bukkit.getScheduler().runTask(this.plugin, lecternInfoGet);
+        }
         return LecternInventoryTranslator.getBaseLecternTag(x, y, z, 0).build(); // Will be updated later
     }
 

@@ -28,6 +28,7 @@ package org.geysermc.connector.network.translators.bedrock;
 import com.github.steveice10.mc.protocol.packet.ingame.client.window.ClientCloseWindowPacket;
 import com.nukkitx.protocol.bedrock.packet.ContainerClosePacket;
 import org.geysermc.connector.inventory.Inventory;
+import org.geysermc.connector.inventory.MerchantContainer;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.PacketTranslator;
 import org.geysermc.connector.network.translators.Translator;
@@ -42,19 +43,26 @@ public class BedrockContainerCloseTranslator extends PacketTranslator<ContainerC
             session.setLastWindowCloseTime(0);
             byte windowId = packet.getId();
 
-            if (windowId == -1 && session.getOpenInventory() != null) {
+            //Client wants close confirmation
+            session.sendUpstreamPacket(packet);
+            session.setClosingInventory(false);
+
+            if (windowId == -1 && session.getOpenInventory() instanceof MerchantContainer) {
+                // 1.16.200 - window ID is always -1 sent from Bedrock
                 windowId = (byte) session.getOpenInventory().getId();
             }
 
             Inventory openInventory = session.getOpenInventory();
-            if (openInventory != null && windowId == openInventory.getId()) {
-                ClientCloseWindowPacket closeWindowPacket = new ClientCloseWindowPacket(windowId);
-                session.sendDownstreamPacket(closeWindowPacket);
-                InventoryUtils.closeInventory(session, windowId);
+            if (openInventory != null) {
+                if (windowId == openInventory.getId()) {
+                    ClientCloseWindowPacket closeWindowPacket = new ClientCloseWindowPacket(windowId);
+                    session.sendDownstreamPacket(closeWindowPacket);
+                    InventoryUtils.closeInventory(session, windowId, false);
+                } else if (openInventory.isPending()) {
+                    InventoryUtils.displayInventory(session, openInventory);
+                    openInventory.setPending(false);
+                }
             }
-
-            //Client wants close confirmation
-            session.sendUpstreamPacket(packet);
         });
     }
 }

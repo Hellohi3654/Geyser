@@ -158,6 +158,8 @@ public class GeyserSession implements CommandSender {
 	private final PlayerInventory playerInventory;
     @Setter
     private Inventory openInventory;
+    @Setter
+    private boolean closingInventory;
 
     @Setter
     private InventoryTranslator inventoryTranslator = InventoryTranslator.PLAYER_INVENTORY_TRANSLATOR;
@@ -195,7 +197,7 @@ public class GeyserSession implements CommandSender {
      * See {@link org.geysermc.connector.network.translators.world.WorldManager#getLecternDataAt(GeyserSession, int, int, int, boolean)}
      * for more information.
      */
-    private final List<Vector3i> lecternCache = new ArrayList<>();
+    private final Set<Vector3i> lecternCache = new ObjectOpenHashSet<>();
 
     @Setter
     private boolean droppingLecternBook;

@@ -101,7 +101,7 @@ public class BlockStateValues {
             return;
         }
 
-		JsonNode notePitch = blockData.get("note_pitch");
+        JsonNode notePitch = blockData.get("note_pitch");
         if (notePitch != null) {
             NOTEBLOCK_PITCHES.put(javaBlockState, blockData.get("note_pitch").intValue());
             return;
