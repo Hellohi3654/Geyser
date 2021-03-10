@@ -287,7 +287,7 @@ public class CollisionManager {
      */
     public boolean isPlayerInWater() {
         return session.getConnector().getConfig().isCacheChunks()
-                && session.getConnector().getWorldManager().getBlockAt(session, session.getPlayerEntity().getPosition().toInt()) == BlockTranslator.JAVA_WATER_ID;
+                && session.getConnector().getWorldManager().getBlockAt(session, session.getPlayerEntity().getPosition().toInt()) == session.getBlockTranslator().getBedrockWaterId();
     }
 
     /**
