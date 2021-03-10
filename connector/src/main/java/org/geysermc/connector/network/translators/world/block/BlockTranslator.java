@@ -55,7 +55,7 @@ public abstract class BlockTranslator {
      * The Java block runtime ID of air
      */
     public static final int JAVA_AIR_ID = 0;
-    public static final int javaWaterId;
+    public static final int JAVA_WATER_ID;
     /**
      * The Bedrock block runtime ID of air
      */
@@ -313,7 +313,7 @@ public abstract class BlockTranslator {
         if (javaWaterRuntimeId == -1) {
             throw new AssertionError("Unable to find Java water in palette");
         }
-        javaWaterId = javaWaterRuntimeId;
+        JAVA_WATER_ID = javaWaterRuntimeId;
 
         if (airRuntimeId == -1) {
             throw new AssertionError("Unable to find air in palette");
