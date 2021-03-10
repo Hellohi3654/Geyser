@@ -1,3 +1,32 @@
+## I have a server that uses the new-geyser branch
+
+- Join the discord if you have any questions or create a issue (https://github.com/Hellohi3654/Geyser/issues)
+- https://discord.gg/92xQSQnKzG
+- IP and Port for both Java and Bedrock Players VVV
+
+- Bedrock:
+- IP: play.voltiac.xyz
+- Port: 19132
+
+- Java:
+- Server Address: play.voltiac.xyz
+
+## The new-geyser branch is a combination of many different geyser forks / PRs
+
+![Geyser Build Branch](https://github.com/Hellohi3654/Geyser/workflows/Geyser%20Build%20Branch/badge.svg)
+
+- Don't message geyser devs if you find a problem
+- Create a issue on my fork I will try and fix it (https://github.com/Hellohi3654/Geyser/issues)
+- You can either compile this branch yourself or download the lastest release (https://github.com/Hellohi3654/Geyser/releases)
+- Here's a list of features this branch includes:
+* [Allow for crawling and moving in one-block spaces where possible](https://github.com/GeyserMC/Geyser/pull/1814)
+* [Smooth Pistons](https://github.com/GeyserMC/Geyser/pull/1542)
+* [2021 World Border](https://github.com/GeyserMC/Geyser/pull/264)
+* [Native Geyser Extension Support](https://github.com/GeyserMC/Geyser/pull/742)
+* and more
+
+## Also checkout [Server-inventory](https://github.com/Hellohi3654/Geyser/tree/server-inventory-new) and [Floodgate 2.0](https://github.com/Hellohi3654/Geyser/tree/floodgate-2.0-new)
+
 <img src="https://geysermc.org/img/geyser-1760-860.png" alt="Geyser" width="600"/>
 
 [![forthebadge made-with-java](http://ForTheBadge.com/images/badges/made-with-java.svg)](https://java.com/)
