@@ -55,13 +55,12 @@ public abstract class BlockTranslator {
      * The Java block runtime ID of air
      */
     public static final int JAVA_AIR_ID = 0;
-    public static final int JAVA_WATER_ID;
+    public static final int javaWaterId;
     /**
      * The Bedrock block runtime ID of air
      */
     private final int bedrockAirId;
     private final int bedrockWaterId;
-	public static final int BEDROCK_WATER_ID;
 
     private final Int2IntMap javaToBedrockBlockMap = new Int2IntOpenHashMap();
     private final Int2IntMap bedrockToJavaBlockMap = new Int2IntOpenHashMap();
@@ -309,12 +308,12 @@ public abstract class BlockTranslator {
         if (bedrockWaterRuntimeId == -1) {
             throw new AssertionError("Unable to find Bedrock water in palette");
         }
-        BEDROCK_WATER_ID = bedrockWaterRuntimeId;
+        bedrockWaterId = bedrockWaterRuntimeId;
 
         if (javaWaterRuntimeId == -1) {
             throw new AssertionError("Unable to find Java water in palette");
         }
-        JAVA_WATER_ID = javaWaterRuntimeId;
+        javaWaterId = javaWaterRuntimeId;
 
         if (airRuntimeId == -1) {
             throw new AssertionError("Unable to find air in palette");
