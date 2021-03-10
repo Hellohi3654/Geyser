@@ -54,6 +54,7 @@ public abstract class BlockTranslator {
      * The Java block runtime ID of air
      */
     public static final int JAVA_AIR_ID = 0;
+    public static final int JAVA_WATER_ID;
     /**
      * The Bedrock block runtime ID of air
      */
@@ -120,6 +121,9 @@ public abstract class BlockTranslator {
         } catch (Exception e) {
             throw new AssertionError("Unable to load Java block mappings", e);
         }
+
+        Reflections ref = GeyserConnector.getInstance().useXmlReflections() ? FileUtils.getReflections("org.geysermc.connector.network.translators.world.block.entity")
+                : new Reflections("org.geysermc.connector.network.translators.world.block.entity");
 
         int javaRuntimeId = -1;
         int cobwebRuntimeId = -1;
@@ -248,7 +252,8 @@ public abstract class BlockTranslator {
         int airRuntimeId = -1;
         int commandBlockRuntimeId = -1;
         int javaRuntimeId = -1;
-        int waterRuntimeId = -1;
+        int javaWaterRuntimeId = -1;
+        int bedrockWaterRuntimeId = -1;
         Iterator<Map.Entry<String, JsonNode>> blocksIterator = BLOCKS_JSON.fields();
         while (blocksIterator.hasNext()) {
             javaRuntimeId++;
@@ -266,7 +271,8 @@ public abstract class BlockTranslator {
                     airRuntimeId = bedrockRuntimeId;
                     break;
                 case "minecraft:water[level=0]":
-                    waterRuntimeId = bedrockRuntimeId;
+                    bedrockWaterRuntimeId = bedrockRuntimeId;
+					javaWaterRuntimeId = javaRuntimeId;
                     break;
                 case "minecraft:command_block[conditional=false,facing=north]":
                     commandBlockRuntimeId = bedrockRuntimeId;
@@ -298,10 +304,15 @@ public abstract class BlockTranslator {
         }
         bedrockRuntimeCommandBlockId = commandBlockRuntimeId;
 
-        if (waterRuntimeId == -1) {
-            throw new AssertionError("Unable to find water in palette");
+        if (bedrockWaterRuntimeId == -1) {
+            throw new AssertionError("Unable to find Bedrock water in palette");
         }
-        bedrockWaterId = waterRuntimeId;
+        BEDROCK_WATER_ID = bedrockWaterRuntimeId;
+
+        if (javaWaterRuntimeId == -1) {
+            throw new AssertionError("Unable to find Java water in palette");
+        }
+        JAVA_WATER_ID = javaWaterRuntimeId;
 
         if (airRuntimeId == -1) {
             throw new AssertionError("Unable to find air in palette");
