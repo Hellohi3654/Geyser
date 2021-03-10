@@ -40,9 +40,11 @@ import org.geysermc.connector.network.translators.world.chunk.ChunkSection;
 import org.geysermc.connector.network.translators.world.chunk.EmptyChunkProvider;
 import org.geysermc.connector.utils.FileUtils;
 
+import java.io.IOException;
 import java.io.DataInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.AbstractMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
