@@ -39,6 +39,7 @@ import org.geysermc.connector.GeyserConnector;
 import org.geysermc.connector.network.translators.world.chunk.ChunkSection;
 import org.geysermc.connector.network.translators.world.chunk.EmptyChunkProvider;
 import org.geysermc.connector.utils.FileUtils;
+import org.reflections.Reflections;
 
 import java.io.IOException;
 import java.io.DataInputStream;
@@ -60,6 +61,7 @@ public abstract class BlockTranslator {
      */
     private final int bedrockAirId;
     private final int bedrockWaterId;
+	public static final int BEDROCK_WATER_ID;
 
     private final Int2IntMap javaToBedrockBlockMap = new Int2IntOpenHashMap();
     private final Int2IntMap bedrockToJavaBlockMap = new Int2IntOpenHashMap();
