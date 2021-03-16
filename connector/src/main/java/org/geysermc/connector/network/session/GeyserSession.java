@@ -1217,10 +1217,10 @@ public class GeyserSession implements CommandSender {
         EventManager.getInstance().triggerEvent(DownstreamPacketSendEvent.of(this, packet))
                 .onNotCancelled(result -> {
                     if (downstream != null && downstream.getSession() != null && (protocol.getSubProtocol().equals(SubProtocol.GAME) || packet.getClass() == LoginPluginResponsePacket.class)) {
-						downstream.getSession().send(packet);
-					} else {
-						connector.getLogger().debug("Tried to send downstream packet " + packet.getClass().getSimpleName() + " before connected to the server");
-					}
+                        downstream.getSession().send(result.getEvent().getPacket());
+                    } else {
+                        connector.getLogger().debug("Tried to send downstream packet " + result.getEvent().getPacket().getClass().getSimpleName() + " before connected to the server");
+                    }
                 });
     }
 

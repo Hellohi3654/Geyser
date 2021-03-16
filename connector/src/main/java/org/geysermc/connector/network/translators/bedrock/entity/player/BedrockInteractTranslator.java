@@ -41,7 +41,6 @@ import org.geysermc.connector.entity.Entity;
 import org.geysermc.connector.entity.living.animal.horse.AbstractHorseEntity;
 import org.geysermc.connector.entity.living.animal.horse.HorseEntity;
 import org.geysermc.connector.entity.type.EntityType;
-import org.geysermc.connector.inventory.GeyserItemStack;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.PacketTranslator;
 import org.geysermc.connector.network.translators.Translator;
@@ -125,7 +124,7 @@ public class BedrockInteractTranslator extends PacketTranslator<InteractPacket> 
                     if (interactEntity == null)
                         return;
                     EntityDataMap entityMetadata = interactEntity.getMetadata();
-                    ItemEntry itemEntry = session.getPlayerInventory().getItemInHand() == GeyserItemStack.EMPTY ? ItemEntry.AIR : ItemRegistry.getItem(session.getPlayerInventory().getItemInHand().getItemStack());
+                    ItemEntry itemEntry = session.getPlayerInventory().getItemInHand().getItemEntry();
                     String javaIdentifierStripped = itemEntry.getJavaIdentifier().replace("minecraft:", "");
 
                     // TODO - in the future, update these in the metadata? So the client doesn't have to wiggle their cursor around for it to happen
@@ -368,7 +367,7 @@ public class BedrockInteractTranslator extends PacketTranslator<InteractPacket> 
                     if (ridingEntity instanceof AbstractHorseEntity) {
                         if (ridingEntity.getMetadata().getFlags().getFlag(EntityFlag.TAMED)) {
                             // We should request to open the horse inventory instead
-                            ClientPlayerStatePacket openHorseWindowPacket = new ClientPlayerStatePacket((int)session.getPlayerEntity().getEntityId(), PlayerState.OPEN_HORSE_INVENTORY);
+                            ClientPlayerStatePacket openHorseWindowPacket = new ClientPlayerStatePacket((int) session.getPlayerEntity().getEntityId(), PlayerState.OPEN_HORSE_INVENTORY);
                             session.sendDownstreamPacket(openHorseWindowPacket);
                         }
                     } else {

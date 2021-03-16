@@ -129,9 +129,16 @@ public abstract class BlockTranslator {
             throw new AssertionError("Unable to load Java block mappings", e);
         }
 
-        Reflections ref = GeyserConnector.getInstance().useXmlReflections() ? FileUtils.getReflections("org.geysermc.connector.network.translators.world.block.entity")
-                : new Reflections("org.geysermc.connector.network.translators.world.block.entity");
+        // Load Block Overrides
+        JsonNode blocksOverride = null;
+        try (InputStream is = FileUtils.getResource("overrides/blocks.json")) {
+            blocksOverride = GeyserConnector.JSON_MAPPER.readTree(is);
+        } catch (IOException | AssertionError ignored) { }
 
+        Object2IntMap<NbtMap> addedStatesMap = new Object2IntOpenHashMap<>();
+        addedStatesMap.defaultReturnValue(-1);
+
+        int waterRuntimeId = -1;
         int javaRuntimeId = -1;
         int cobwebRuntimeId = -1;
         int furnaceRuntimeId = -1;
@@ -143,6 +150,11 @@ public abstract class BlockTranslator {
             javaRuntimeId++;
             Map.Entry<String, JsonNode> entry = blocksIterator.next();
             String javaId = entry.getKey();
+
+            // Check for an override
+            if (blocksOverride != null && blocksOverride.has(javaId)) {
+                entry = new AbstractMap.SimpleEntry<>(javaId, blocksOverride.get(javaId));
+            }
 
             // TODO fix this, (no block should have a null hardness)
             JsonNode hardnessNode = entry.getValue().get("block_hardness");
