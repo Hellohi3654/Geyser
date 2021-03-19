@@ -1,3 +1,32 @@
+## I have a server that uses the new-geyser branch
+
+- Join the discord if you have any questions or create a issue (https://github.com/Hellohi3654/Geyser/issues)
+- https://discord.gg/92xQSQnKzG
+- IP and Port for both Java and Bedrock Players VVV
+
+- Bedrock:
+- IP: play.voltiac.xyz
+- Port: 19132
+
+- Java:
+- Server Address: play.voltiac.xyz
+
+## The new-geyser branch is a combination of many different geyser forks / PRs
+
+![Geyser Build Branch](https://github.com/Hellohi3654/Geyser/workflows/Geyser%20Build%20Branch/badge.svg)
+
+- Don't message geyser devs if you find a problem
+- Create a issue on my fork I will try and fix it (https://github.com/Hellohi3654/Geyser/issues)
+- You can either compile this branch yourself or download the lastest release (https://github.com/Hellohi3654/Geyser/releases)
+- Here's a list of features this branch includes:
+* [Allow for crawling and moving in one-block spaces where possible](https://github.com/GeyserMC/Geyser/pull/1814)
+* [Smooth Pistons](https://github.com/GeyserMC/Geyser/pull/1542)
+* [2021 World Border](https://github.com/GeyserMC/Geyser/pull/264)
+* [Native Geyser Extension Support](https://github.com/GeyserMC/Geyser/pull/742)
+* and more
+
+## Also checkout [Floodgate 2.0](https://github.com/Hellohi3654/Geyser/tree/temp-floodgate)
+
 <img src="https://geysermc.org/img/geyser-1760-860.png" alt="Geyser" width="600"/>
 
 [![forthebadge made-with-java](http://ForTheBadge.com/images/badges/made-with-java.svg)](https://java.com/)
@@ -34,20 +63,10 @@ Take a look [here](https://github.com/GeyserMC/Geyser/wiki#Setup) for how to set
 - Test Server: `test.geysermc.org` port `25565` for Java and `19132` for Bedrock
 
 ## What's Left to be Added/Fixed
-- Lecterns
 - Near-perfect movement (to the point where anticheat on large servers is unlikely to ban you)
 - Resource pack conversion/CustomModelData
 - Some Entity Flags
-- The Following Inventories 
-  - Enchantment Table (as a proper GUI)
-  - Beacon
-  - Cartography Table
-  - Stonecutter
-  - Structure Block
-  - Horse Inventory
-  - Loom
-  - Smithing Table
-  - Grindstone
+- Structure block UI
 
 ## What can't be fixed
 The following things can't be fixed because of Bedrock limitations. They might be fixable in the future, but not as of now.

@@ -35,6 +35,8 @@ import lombok.Getter;
 import org.geysermc.connector.GeyserConnector;
 import org.geysermc.connector.common.AuthType;
 import org.geysermc.connector.entity.player.PlayerEntity;
+import org.geysermc.connector.event.EventManager;
+import org.geysermc.connector.event.events.geyser.LoadBedrockSkinEvent;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.session.auth.BedrockClientData;
 import org.geysermc.connector.utils.LanguageUtils;
@@ -206,6 +208,10 @@ public class SkinManager {
     }
 
     public static void handleBedrockSkin(PlayerEntity playerEntity, BedrockClientData clientData) {
+        if (EventManager.getInstance().triggerEvent(new LoadBedrockSkinEvent(playerEntity, clientData)).getEvent().isCancelled()) {
+            return;
+        }
+
         GeyserConnector.getInstance().getLogger().info(LanguageUtils.getLocaleStringLog("geyser.skin.bedrock.register", playerEntity.getUsername(), playerEntity.getUuid()));
 
         try {
@@ -286,7 +292,7 @@ public class SkinManager {
 
             String skinUrl = isAlex ? SkinProvider.EMPTY_SKIN_ALEX.getTextureUrl() : SkinProvider.EMPTY_SKIN.getTextureUrl();
             String capeUrl = SkinProvider.EMPTY_CAPE.getTextureUrl();
-            if (("steve".equals(skinUrl) || "alex".equals(skinUrl)) && GeyserConnector.getInstance().getAuthType() != AuthType.ONLINE) {
+            if (("steve".equals(skinUrl) || "alex".equals(skinUrl)) && GeyserConnector.getInstance().getDefaultAuthType() != AuthType.ONLINE) {
                 GeyserSession session = GeyserConnector.getInstance().getPlayerByUuid(profile.getId());
 
                 if (session != null) {
