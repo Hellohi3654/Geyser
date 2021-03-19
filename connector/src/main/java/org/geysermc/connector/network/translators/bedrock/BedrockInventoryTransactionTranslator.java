@@ -93,7 +93,7 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
                             boolean dropAll = worldAction.getToItem().getCount() > 1;
                             ClientPlayerActionPacket dropAllPacket = new ClientPlayerActionPacket(
                                     dropAll ? PlayerAction.DROP_ITEM_STACK : PlayerAction.DROP_ITEM,
-                                    new Position(0, 0, 0),
+                                    BlockUtils.POSITION_ZERO,
                                     BlockFace.DOWN
                             );
                             session.sendDownstreamPacket(dropAllPacket);
@@ -307,7 +307,7 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
             case ITEM_RELEASE:
                 if (packet.getActionType() == 0) {
                     // Followed to the Minecraft Protocol specification outlined at wiki.vg
-                    ClientPlayerActionPacket releaseItemPacket = new ClientPlayerActionPacket(PlayerAction.RELEASE_USE_ITEM, new Position(0,0,0),
+                    ClientPlayerActionPacket releaseItemPacket = new ClientPlayerActionPacket(PlayerAction.RELEASE_USE_ITEM, BlockUtils.POSITION_ZERO,
                             BlockFace.DOWN);
                     session.sendDownstreamPacket(releaseItemPacket);
                 }
