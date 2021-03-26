@@ -41,7 +41,7 @@ import org.geysermc.connector.network.session.cache.ResourcePackCache;
 import org.geysermc.connector.network.translators.item.ItemEntry;
 import org.geysermc.connector.network.translators.item.ItemRegistry;
 import org.geysermc.packconverter.api.PackConverter;
-import org.geysermc.packconverter.api.utils.CustomModelData;
+import org.geysermc.packconverter.api.utils.CustomModelDataHandler;
 
 import java.nio.file.Path;
 import java.util.Map;
