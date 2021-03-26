@@ -32,6 +32,7 @@ import com.nukkitx.nbt.NbtMap;
 import com.nukkitx.nbt.NbtMapBuilder;
 import com.nukkitx.nbt.NbtType;
 import com.nukkitx.protocol.bedrock.data.inventory.ItemData;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.geysermc.connector.GeyserConnector;
@@ -96,9 +97,16 @@ public abstract class ItemTranslator {
         NBT_TRANSLATORS.addAll(loadedNbtItemTranslators.keySet().stream().sorted(Comparator.comparingInt(loadedNbtItemTranslators::get)).collect(Collectors.toList()));
     }
 
-    public static ItemStack translateToJava(ItemData data) {
+    public static ItemStack translateToJava(GeyserSession session, ItemData data) {
         if (data == null) {
             return new ItemStack(0);
+        }
+        // Restore the item back to its original state if we replaced the item with custom model data
+        if (session.getResourcePackCache().isCustomModelDataActive()) {
+            int id = session.getResourcePackCache().getBedrockCustomIdToProperBedrockId().getOrDefault(data.getId(), -1);
+            if (id != -1) {
+                data = ItemData.of(id, data.getDamage(), data.getCount(), data.getTag(), data.getCanPlace(), data.getCanBreak());
+            }
         }
         ItemEntry javaItem = ItemRegistry.getItem(data);
 
@@ -172,6 +180,16 @@ public abstract class ItemTranslator {
             canBreak = getCanModify(session, canDestroy, canBreak);
             canPlace = getCanModify(session, canPlaceOn, canPlace);
             itemData = ItemData.of(itemData.getId(), itemData.getDamage(), itemData.getCount(), itemData.getTag(), canPlace, canBreak);
+
+            // Check to see if the item has CustomModelData
+            IntTag customModelData = nbt.get("CustomModelData");
+            if (session.getResourcePackCache().isCustomModelDataActive() && customModelData != null) {
+                // If we're expecting custom model data and it's present, look for the Bedrock "replacement" we set up.
+                Int2IntMap map = session.getResourcePackCache().getJavaToCustomModelDataToBedrockId().get(stack.getId());
+                if (map != null) {
+                    itemData = ItemData.of(map.get(customModelData.getValue().intValue()), (short) 0, itemData.getCount(), itemData.getTag(), canPlace, canBreak);
+                }
+            }
         }
 
         return itemData;

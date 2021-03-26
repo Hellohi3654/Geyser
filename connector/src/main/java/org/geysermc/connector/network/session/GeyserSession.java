@@ -68,6 +68,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import lombok.AccessLevel;
@@ -98,6 +99,9 @@ import org.geysermc.connector.event.events.packet.DownstreamPacketSendEvent;
 import org.geysermc.connector.event.events.packet.UpstreamPacketSendEvent;
 import org.geysermc.connector.inventory.Inventory;
 import org.geysermc.connector.inventory.PlayerInventory;
+import org.geysermc.connector.network.UpstreamPacketHandler;
+import org.geysermc.connector.network.translators.chat.MessageTranslator;
+import org.geysermc.connector.network.remote.RemoteServer;
 import org.geysermc.connector.network.session.auth.AuthData;
 import org.geysermc.connector.network.session.auth.BedrockClientData;
 import org.geysermc.connector.network.session.cache.*;
@@ -156,6 +160,8 @@ public class GeyserSession implements CommandSender {
     private ChunkCache chunkCache;
     private EntityCache entityCache;
     private EntityEffectCache effectCache;
+    @Setter
+    private ResourcePackCache resourcePackCache;
     private WorldCache worldCache;
     private WindowCache windowCache;
     private final Int2ObjectMap<TeleportCache> teleportMap = new Int2ObjectOpenHashMap<>();
@@ -222,6 +228,11 @@ public class GeyserSession implements CommandSender {
 
     private boolean loggedIn;
     private boolean loggingIn;
+
+    @Setter
+    private boolean transferring;
+
+    private List<Packet> cachedPackets = new ObjectArrayList<>();
 
     @Setter
     private boolean spawned;
@@ -462,6 +473,7 @@ public class GeyserSession implements CommandSender {
         this.chunkCache = new ChunkCache(this);
         this.entityCache = new EntityCache(this);
         this.effectCache = new EntityEffectCache();
+        this.resourcePackCache = new ResourcePackCache();
         this.worldCache = new WorldCache(this);
         this.windowCache = new WindowCache(this);
 
@@ -508,6 +520,13 @@ public class GeyserSession implements CommandSender {
 
         // Set the hardcoded shield ID to the ID we just defined in StartGamePacket
         upstream.getSession().getHardcodedBlockingId().set(ItemRegistry.SHIELD.getBedrockId());
+
+        if (resourcePackCache.isCustomModelDataActive()) {
+            ItemComponentPacket componentPacket = new ItemComponentPacket();
+            componentPacket.getItems().addAll(resourcePackCache.getComponentData());
+            upstream.sendPacket(componentPacket);
+            System.out.println(componentPacket);
+        }
 
         ChunkUtils.sendEmptyChunks(this, playerEntity.getPosition().toInt(), 0, false);
 
@@ -823,6 +842,9 @@ public class GeyserSession implements CommandSender {
     }
 
     public void disconnect(String reason) {
+        if (transferring) {
+            UpstreamPacketHandler.RECONNECTING_CLIENTS.put(authData.getXboxUUID(), resourcePackCache);
+        }
         if (!closed) {
             loggedIn = false;
             if (downstream != null && downstream.getSession() != null) {
@@ -1057,7 +1079,7 @@ public class GeyserSession implements CommandSender {
         // startGamePacket.setCurrentTick(0);
         startGamePacket.setEnchantmentSeed(0);
         startGamePacket.setMultiplayerCorrelationId("");
-        startGamePacket.setItemEntries(ItemRegistry.ITEMS);
+        startGamePacket.setItemEntries(resourcePackCache.getBedrockCustomItems().isEmpty() ? ItemRegistry.ITEMS : resourcePackCache.getAllItems());
         startGamePacket.setVanillaVersion("*");
         startGamePacket.setInventoriesServerAuthoritative(true);
         startGamePacket.setAuthoritativeMovementMode(AuthoritativeMovementMode.CLIENT); // can be removed once 1.16.200 support is dropped
