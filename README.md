@@ -1,4 +1,4 @@
-## I have a server that uses the new-geyser branch
+## I have a server that uses my main branch
 
 - Join the discord if you have any questions or create a issue (https://github.com/Hellohi3654/Geyser/issues)
 - https://discord.gg/92xQSQnKzG
@@ -25,7 +25,9 @@
 * [Native Geyser Extension Support](https://github.com/GeyserMC/Geyser/pull/742)
 * and more
 
-## Also checkout [Floodgate 2.0](https://github.com/Hellohi3654/Geyser/tree/temp-floodgate)
+## Also checkout [Floodgate 2.0](https://github.com/Hellohi3654/Geyser/tree/temp-floodgate2) 
+
+## You can download floodgate 2.0 here: https://ci.opencollab.dev/job/GeyserMC/job/Floodgate/job/dev%252F2.0/
 
 <img src="https://geysermc.org/img/geyser-1760-860.png" alt="Geyser" width="600"/>
 
