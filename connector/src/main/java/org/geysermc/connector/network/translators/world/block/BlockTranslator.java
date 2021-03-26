@@ -138,13 +138,13 @@ public abstract class BlockTranslator {
         Object2IntMap<NbtMap> addedStatesMap = new Object2IntOpenHashMap<>();
         addedStatesMap.defaultReturnValue(-1);
 
-        int waterRuntimeId = -1;
         int javaRuntimeId = -1;
         int cobwebRuntimeId = -1;
         int furnaceRuntimeId = -1;
         int furnaceLitRuntimeId = -1;
         int spawnerRuntimeId = -1;
         int uniqueJavaId = -1;
+        int waterRuntimeId = -1;
         Iterator<Map.Entry<String, JsonNode>> blocksIterator = BLOCKS_JSON.fields();
         while (blocksIterator.hasNext()) {
             javaRuntimeId++;
@@ -215,6 +215,9 @@ public abstract class BlockTranslator {
 
             } else if (javaId.startsWith("minecraft:spawner")) {
                 spawnerRuntimeId = javaRuntimeId;
+
+            } else if ("minecraft:water[level=0]".equals(javaId)) {
+                waterRuntimeId = javaRuntimeId;
             }
         }
 
@@ -237,6 +240,11 @@ public abstract class BlockTranslator {
             throw new AssertionError("Unable to find spawner in palette");
         }
         JAVA_RUNTIME_SPAWNER_ID = spawnerRuntimeId;
+
+        if (waterRuntimeId == -1) {
+            throw new AssertionError("Unable to find Java water in palette");
+        }
+        JAVA_WATER_ID = waterRuntimeId;
 
         BlockTranslator1_16_100.init();
         BlockTranslator1_16_210.init();
@@ -332,6 +340,7 @@ public abstract class BlockTranslator {
             throw new AssertionError("Unable to find Bedrock water in palette");
         }
         bedrockWaterId = bedrockWaterRuntimeId;
+		bedrockWaterId = waterRuntimeId;
 
         if (javaWaterRuntimeId == -1) {
             throw new AssertionError("Unable to find Java water in palette");

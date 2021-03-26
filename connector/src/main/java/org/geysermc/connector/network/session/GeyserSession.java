@@ -57,6 +57,7 @@ import com.nukkitx.protocol.bedrock.BedrockPacket;
 import com.nukkitx.protocol.bedrock.BedrockServerSession;
 import com.nukkitx.protocol.bedrock.data.*;
 import com.nukkitx.protocol.bedrock.data.command.CommandPermission;
+import com.nukkitx.protocol.bedrock.data.entity.EntityData;
 import com.nukkitx.protocol.bedrock.data.entity.EntityFlag;
 import com.nukkitx.protocol.bedrock.packet.*;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -468,8 +469,6 @@ public class GeyserSession implements CommandSender {
 
         this.playerEntity = new SessionPlayerEntity(this);
         collisionManager.updatePlayerBoundingBox(this.playerEntity.getPosition());
-        this.worldCache = new WorldCache(this);
-        this.windowCache = new WindowCache(this);
 
         this.playerInventory = new PlayerInventory();
         this.openInventory = null;
@@ -903,8 +902,22 @@ public class GeyserSession implements CommandSender {
 
     public void setSneaking(boolean sneaking) {
         this.sneaking = sneaking;
-        collisionManager.updatePlayerBoundingBox();
-        collisionManager.updateScaffoldingFlags();
+
+        // Update pose and bounding box on our end
+        if (!sneaking && adjustSpeed()) {
+            // Update attributes since we're still "sneaking" under a 1.5-block-tall area
+            playerEntity.updateBedrockAttributes(this);
+            // the server *should* update our pose once it has returned to normal
+        } else {
+            this.pose = sneaking ? Pose.SNEAKING : Pose.STANDING;
+            playerEntity.getMetadata().put(EntityData.BOUNDING_BOX_HEIGHT, sneaking ? 1.5f : playerEntity.getEntityType().getHeight());
+            playerEntity.getMetadata().getFlags().setFlag(EntityFlag.SNEAKING, sneaking);
+
+            collisionManager.updatePlayerBoundingBox();
+            collisionManager.updateScaffoldingFlags(false);
+        }
+
+        playerEntity.updateBedrockMetadata(this);
 
         if (mouseoverEntity != null) {
             // Horses, etc can change their property depending on if you're sneaking
@@ -912,15 +925,15 @@ public class GeyserSession implements CommandSender {
         }
     }
 
-    /**
-     * Will be overwritten for GeyserConnect.
-     */
-    protected void disableSrvResolving() {
-        this.downstream.getSession().setFlag(BuiltinFlags.ATTEMPT_SRV_RESOLVE, false);
+    public void setSwimming(boolean swimming) {
+        this.pose = swimming ? Pose.SWIMMING : Pose.STANDING;
+        playerEntity.getMetadata().put(EntityData.BOUNDING_BOX_HEIGHT, swimming ? 0.6f : playerEntity.getEntityType().getHeight());
+        playerEntity.getMetadata().getFlags().setFlag(EntityFlag.SWIMMING, swimming);
+        playerEntity.updateBedrockMetadata(this);
     }
 
     /**
-     * Adjusts speed if the player should be sneaking, or if the player is crawling.
+     * Adjusts speed if the player is crawling.
      *
      * @return true if attributes should be updated.
      */
@@ -939,6 +952,13 @@ public class GeyserSession implements CommandSender {
             }
         }
         return false;
+    }
+
+    /**
+     * Will be overwritten for GeyserConnect.
+     */
+    protected void disableSrvResolving() {
+        this.downstream.getSession().setFlag(BuiltinFlags.ATTEMPT_SRV_RESOLVE, false);
     }
 
     @Override

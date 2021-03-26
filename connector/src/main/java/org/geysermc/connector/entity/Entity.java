@@ -303,8 +303,6 @@ public class Entity {
                 metadata.getFlags().setFlag(EntityFlag.SLEEPING, pose.equals(Pose.SLEEPING));
                 // Triggered when crawling
                 metadata.getFlags().setFlag(EntityFlag.SWIMMING, pose.equals(Pose.SWIMMING));
-                // Has to be a byte or it does not work
-                metadata.put(EntityData.PLAYER_FLAGS, pose.equals(Pose.SLEEPING) ? (byte) 2 : (byte) 0);
                 float width = entityType.getWidth();
                 float height = entityType.getHeight();
                 switch (pose) {
