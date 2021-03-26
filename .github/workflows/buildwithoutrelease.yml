@@ -33,6 +33,13 @@ jobs:
     - name: submodules-init
       uses: snickerbockers/submodules-init@v4
 
+    - name: (Hacky) method of compiling Geyser with PackConverter first #Thanks Jackson_57#4340 or https://github.com/jackson-57
+      run: |
+          git clone https://github.com/GeyserMC/PackConverter.git GeyserPackConverter
+          cd GeyserPackConverter
+          mvn clean install -T 2C
+          cd ..
+
     - name: Build with Maven
       run: mvn -B -U package -T 2C
 
