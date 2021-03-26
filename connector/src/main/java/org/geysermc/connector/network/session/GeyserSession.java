@@ -74,8 +74,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
-import org.geysermc.common.window.CustomFormWindow;
-import org.geysermc.common.window.FormWindow;
 import org.geysermc.connector.GeyserConnector;
 import org.geysermc.connector.common.ChatColor;
 import org.geysermc.connector.entity.Tickable;
@@ -109,10 +107,13 @@ import org.geysermc.connector.network.translators.collision.CollisionManager;
 import org.geysermc.connector.network.translators.inventory.InventoryTranslator;
 import org.geysermc.connector.network.translators.item.ItemRegistry;
 import org.geysermc.connector.network.translators.world.block.BlockTranslator;
+import org.geysermc.connector.skin.FloodgateSkinUploader;
 import org.geysermc.connector.skin.SkinManager;
 import org.geysermc.connector.utils.*;
+import org.geysermc.cumulus.Form;
+import org.geysermc.cumulus.util.FormBuilder;
+import org.geysermc.floodgate.crypto.FloodgateCipher;
 import org.geysermc.floodgate.util.BedrockData;
-import org.geysermc.floodgate.util.EncryptionUtil;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -157,7 +158,7 @@ public class GeyserSession implements CommandSender {
     private EntityCache entityCache;
     private EntityEffectCache effectCache;
     private WorldCache worldCache;
-    private WindowCache windowCache;
+    private FormCache formCache;
     private final Int2ObjectMap<TeleportCache> teleportMap = new Int2ObjectOpenHashMap<>();
 
 	@Setter
@@ -376,9 +377,6 @@ public class GeyserSession implements CommandSender {
 
     private boolean reducedDebugInfo = false;
 
-    @Setter
-    private CustomFormWindow settingsForm;
-
     /**
      * The op permission level set by the server
      */
@@ -423,7 +421,7 @@ public class GeyserSession implements CommandSender {
 
     /**
      * Stores the last text inputted into a sign.
-     *
+     * <p>
      * Bedrock sends packets every time you update the sign, Java only wants the final packet.
      * Until we determine that the user has finished editing, we save the sign's current status.
      */
@@ -463,10 +461,9 @@ public class GeyserSession implements CommandSender {
         this.entityCache = new EntityCache(this);
         this.effectCache = new EntityEffectCache();
         this.worldCache = new WorldCache(this);
-        this.windowCache = new WindowCache(this);
+        this.formCache = new FormCache(this);
 
         this.collisionManager = new CollisionManager(this);
-
         this.playerEntity = new SessionPlayerEntity(this);
         collisionManager.updatePlayerBoundingBox(this.playerEntity.getPosition());
 
@@ -619,7 +616,7 @@ public class GeyserSession implements CommandSender {
                 MsaAuthenticationService msaAuthenticationService = new MsaAuthenticationService(GeyserConnector.OAUTH_CLIENT_ID);
 
                 MsaAuthenticationService.MsCodeResponse response = msaAuthenticationService.getAuthCode();
-                LoginEncryptionUtils.showMicrosoftCodeWindow(this, response);
+                LoginEncryptionUtils.buildAndShowMicrosoftCodeWindow(this, response);
 
                 // This just looks cool
                 SetTimePacket packet = new SetTimePacket();
@@ -664,24 +661,6 @@ public class GeyserSession implements CommandSender {
      */
     private void connectDownstream() {
         boolean floodgate = this.remoteAuthType == AuthType.FLOODGATE;
-        final PublicKey publicKey;
-
-        if (floodgate) {
-            PublicKey key = null;
-            try {
-                key = EncryptionUtil.getKeyFromFile(
-                        connector.getConfig().getFloodgateKeyPath(),
-                        PublicKey.class
-                );
-            } catch (IOException | InvalidKeySpecException | NoSuchAlgorithmException e) {
-                connector.getLogger().error(LanguageUtils.getLocaleStringLog("geyser.auth.floodgate.bad_key"), e);
-            }
-            publicKey = key;
-        } else publicKey = null;
-
-        if (publicKey != null) {
-            connector.getLogger().info(LanguageUtils.getLocaleStringLog("geyser.auth.floodgate.loaded_key"));
-        }
 
         // Start ticking
         tickThread = connector.getGeneralThreadPool().scheduleAtFixedRate(this::tick, 50, 50, TimeUnit.MILLISECONDS);
@@ -701,25 +680,36 @@ public class GeyserSession implements CommandSender {
             public void packetSending(PacketSendingEvent event) {
                 //todo move this somewhere else
                 if (event.getPacket() instanceof HandshakePacket && floodgate) {
-                    String encrypted = "";
+                    byte[] encryptedData;
+
                     try {
-                        encrypted = EncryptionUtil.encryptBedrockData(publicKey, new BedrockData(
+                        FloodgateSkinUploader skinUploader = connector.getSkinUploader();
+                        FloodgateCipher cipher = connector.getCipher();
+
+                        encryptedData = cipher.encryptFromString(BedrockData.of(
                                 clientData.getGameVersion(),
                                 authData.getName(),
                                 authData.getXboxUUID(),
-                                clientData.getDeviceOS().ordinal(),
+                                clientData.getDeviceOs().ordinal(),
                                 clientData.getLanguageCode(),
+                                clientData.getUiProfile().ordinal(),
                                 clientData.getCurrentInputMode().ordinal(),
-                                upstream.getAddress().getAddress().getHostAddress()
-                        ));
+                                upstream.getAddress().getAddress().getHostAddress(),
+                                skinUploader.getId(),
+                                skinUploader.getVerifyCode()
+                        ).toString());
                     } catch (Exception e) {
                         connector.getLogger().error(LanguageUtils.getLocaleStringLog("geyser.auth.floodgate.encrypt_fail"), e);
+                        disconnect(LanguageUtils.getPlayerLocaleString("geyser.auth.floodgate.encryption_fail", getClientData().getLanguageCode()));
+                        return;
                     }
+
+                    String finalDataString = new String(encryptedData, StandardCharsets.UTF_8);
 
                     HandshakePacket handshakePacket = event.getPacket();
                     event.setPacket(new HandshakePacket(
                             handshakePacket.getProtocolVersion(),
-                            handshakePacket.getHostname() + '\0' + BedrockData.FLOODGATE_IDENTIFIER + '\0' + encrypted,
+                            handshakePacket.getHostname() + '\0' + finalDataString,
                             handshakePacket.getPort(),
                             handshakePacket.getIntent()
                     ));
@@ -752,7 +742,7 @@ public class GeyserSession implements CommandSender {
 
                 // Let the user know there locale may take some time to download
                 // as it has to be extracted from a JAR
-                if (locale.toLowerCase().equals("en_us") && !LocaleUtils.LOCALE_MAPPINGS.containsKey("en_us")) {
+                if (locale.equalsIgnoreCase("en_us") && !LocaleUtils.LOCALE_MAPPINGS.containsKey("en_us")) {
                     // This should probably be left hardcoded as it will only show for en_us clients
                     sendMessage("Loading your locale (en_us); if this isn't already downloaded, this may take some time");
                 }
@@ -785,6 +775,10 @@ public class GeyserSession implements CommandSender {
                         if (!closed) {
                             handleDownstreamPacket(event.getPacket());
                         }
+
+                        // We'll send the skin upload a bit after the handshake packet (aka this packet),
+                        // because otherwise the global server returns the data too fast.
+                        getAuthData().upload(connector);
                     }
 
             @Override
@@ -844,7 +838,7 @@ public class GeyserSession implements CommandSender {
         this.entityCache = null;
         this.effectCache = null;
         this.worldCache = null;
-        this.windowCache = null;
+        this.formCache = null;
 
         this.worldBorder = null;
 
@@ -989,10 +983,6 @@ public class GeyserSession implements CommandSender {
         return clientData.getLanguageCode();
      }
 
-    public void sendForm(FormWindow window, int id) {
-        windowCache.showWindow(window, id);
-    }
-
     public void setRenderDistance(int renderDistance) {
         renderDistance = GenericMath.ceil(++renderDistance * MathUtils.SQRT_OF_TWO); //square to circle
         this.renderDistance = renderDistance;
@@ -1006,8 +996,12 @@ public class GeyserSession implements CommandSender {
         return this.upstream.getAddress();
     }
 
-    public void sendForm(FormWindow window) {
-        windowCache.showWindow(window);
+    public void sendForm(Form form) {
+        formCache.showForm(form);
+    }
+
+    public void sendForm(FormBuilder<?, ?> formBuilder) {
+        formCache.showForm(formBuilder.build());
     }
 
     private void startGame() {
@@ -1312,7 +1306,7 @@ public class GeyserSession implements CommandSender {
      * Send a gamerule value to the client
      *
      * @param gameRule The gamerule to send
-     * @param value The value of the gamerule
+     * @param value    The value of the gamerule
      */
     public void sendGameRule(String gameRule, Object value) {
         GameRulesChangedPacket gameRulesChangedPacket = new GameRulesChangedPacket();

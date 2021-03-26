@@ -23,15 +23,18 @@
  * @link https://github.com/GeyserMC/Geyser
  */
 
-package org.geysermc.common.window.response;
+package org.geysermc.floodgate.util;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+public enum WebsocketEventType {
+    SUBSCRIBER_CREATED,
+    SUBSCRIBERS_COUNT,
+    ADDED_TO_QUEUE,
+    SKIN_UPLOADED,
+    CREATOR_DISCONNECTED;
 
-@AllArgsConstructor
-@Getter
-public class FormResponseData {
+    public static final WebsocketEventType[] VALUES = values();
 
-    private int elementID;
-    private String elementContent;
+    public static WebsocketEventType getById(int id) {
+        return VALUES.length > id ? VALUES[id] : null;
+    }
 }
