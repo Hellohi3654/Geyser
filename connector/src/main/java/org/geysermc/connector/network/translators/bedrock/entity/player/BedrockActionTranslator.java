@@ -82,11 +82,15 @@ public class BedrockActionTranslator extends PacketTranslator<PlayerActionPacket
             case START_SWIMMING:
                 ClientPlayerStatePacket startSwimPacket = new ClientPlayerStatePacket((int) entity.getEntityId(), PlayerState.START_SPRINTING);
                 session.sendDownstreamPacket(startSwimPacket);
+
+                session.setSwimming(true);
                 break;
             case STOP_SWIMMING:
                 // TODO make this better and only stop sprinting if the player is stopping in water - otherwise the sprint continues
                 ClientPlayerStatePacket stopSwimPacket = new ClientPlayerStatePacket((int) entity.getEntityId(), PlayerState.STOP_SPRINTING);
                 session.sendDownstreamPacket(stopSwimPacket);
+
+                session.setSwimming(false);
                 break;
             case START_GLIDE:
                 // Otherwise gliding will not work in creative
@@ -113,7 +117,7 @@ public class BedrockActionTranslator extends PacketTranslator<PlayerActionPacket
                     }
                     session.sendDownstreamPacket(useItemPacket);
                     session.getPlayerEntity().getMetadata().getFlags().setFlag(EntityFlag.BLOCKING, true);
-                    session.getPlayerEntity().updateBedrockMetadata(session);
+                    // metadata will be updated when sneaking
                 }
 
                 session.setSneaking(true);
@@ -127,7 +131,7 @@ public class BedrockActionTranslator extends PacketTranslator<PlayerActionPacket
                     ClientPlayerActionPacket releaseItemPacket = new ClientPlayerActionPacket(PlayerAction.RELEASE_USE_ITEM, BlockUtils.POSITION_ZERO, BlockFace.DOWN);
                     session.sendDownstreamPacket(releaseItemPacket);
                     session.getPlayerEntity().getMetadata().getFlags().setFlag(EntityFlag.BLOCKING, false);
-                    session.getPlayerEntity().updateBedrockMetadata(session);
+                    // metadata will be updated when sneaking
                 }
 
                 session.setSneaking(false);

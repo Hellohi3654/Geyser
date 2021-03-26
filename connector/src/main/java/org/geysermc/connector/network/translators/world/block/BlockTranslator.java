@@ -138,13 +138,13 @@ public abstract class BlockTranslator {
         Object2IntMap<NbtMap> addedStatesMap = new Object2IntOpenHashMap<>();
         addedStatesMap.defaultReturnValue(-1);
 
-        int waterRuntimeId = -1;
         int javaRuntimeId = -1;
         int cobwebRuntimeId = -1;
         int furnaceRuntimeId = -1;
         int furnaceLitRuntimeId = -1;
         int spawnerRuntimeId = -1;
         int uniqueJavaId = -1;
+        int waterRuntimeId = -1;
         Iterator<Map.Entry<String, JsonNode>> blocksIterator = BLOCKS_JSON.fields();
         while (blocksIterator.hasNext()) {
             javaRuntimeId++;

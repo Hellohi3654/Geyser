@@ -255,7 +255,7 @@ public class CollisionManager {
             }
         }
 
-        updateScaffoldingFlags();
+        updateScaffoldingFlags(true);
 
         return true;
     }
@@ -293,8 +293,10 @@ public class CollisionManager {
     /**
      * Updates scaffolding entity flags
      * Scaffolding needs to be checked per-move since it's a flag in Bedrock but Java does it client-side
+     *
+     * @param updateMetadata whether we should update metadata if something changed
      */
-    public void updateScaffoldingFlags() {
+    public void updateScaffoldingFlags(boolean updateMetadata) {
         EntityFlags flags = session.getPlayerEntity().getMetadata().getFlags();
         boolean flagsChanged;
         boolean isSneakingWithScaffolding = (touchingScaffolding || onScaffolding) && session.isSneaking();
@@ -308,7 +310,7 @@ public class CollisionManager {
         flagsChanged |= flags.getFlag(EntityFlag.IN_SCAFFOLDING) != touchingScaffolding;
         flags.setFlag(EntityFlag.IN_SCAFFOLDING, touchingScaffolding);
 
-        if (flagsChanged) {
+        if (flagsChanged && updateMetadata) {
             session.getPlayerEntity().updateBedrockMetadata(session);
         }
     }

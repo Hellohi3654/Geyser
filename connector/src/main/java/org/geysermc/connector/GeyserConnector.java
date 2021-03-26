@@ -65,6 +65,7 @@ import org.geysermc.floodgate.crypto.AesCipher;
 import org.geysermc.floodgate.crypto.AesKeyProducer;
 import org.geysermc.floodgate.crypto.Base64Topping;
 import org.geysermc.floodgate.crypto.FloodgateCipher;
+import org.jetbrains.annotations.Contract;
 
 import javax.naming.directory.Attribute;
 import javax.naming.directory.InitialDirContext;
@@ -219,6 +220,7 @@ public class GeyserConnector {
         }
 
         CooldownUtils.setShowCooldown(config.isShowCooldown());
+        CooldownUtils.setActionbarCooldown(config.isActionbarCooldown());
         DimensionUtils.changeBedrockNetherId(config.isAboveBedrockNetherBuilding()); // Apply End dimension ID workaround to Nether
         SkullBlockEntityTranslator.ALLOW_CUSTOM_SKULLS = config.isAllowCustomSkulls();
 
@@ -392,9 +394,14 @@ public class GeyserConnector {
      * @param uuid the uuid
      * @return the player or <code>null</code> if there is no player online with this UUID
      */
+    @Contract("null -> null")
     public GeyserSession getPlayerByUuid(UUID uuid) {
+        if (uuid == null) {
+            return null;
+        }
+
         for (GeyserSession session : players) {
-            if (session.getPlayerEntity().getUuid().equals(uuid)) {
+            if (uuid.equals(session.getPlayerEntity().getUuid())) {
                 return session;
             }
         }
