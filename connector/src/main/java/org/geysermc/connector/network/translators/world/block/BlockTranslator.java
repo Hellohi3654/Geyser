@@ -215,9 +215,6 @@ public abstract class BlockTranslator {
 
             } else if (javaId.startsWith("minecraft:spawner")) {
                 spawnerRuntimeId = javaRuntimeId;
-
-            } else if ("minecraft:water[level=0]".equals(javaId)) {
-                waterRuntimeId = javaRuntimeId;
             }
         }
 
@@ -240,11 +237,6 @@ public abstract class BlockTranslator {
             throw new AssertionError("Unable to find spawner in palette");
         }
         JAVA_RUNTIME_SPAWNER_ID = spawnerRuntimeId;
-
-        if (waterRuntimeId == -1) {
-            throw new AssertionError("Unable to find Java water in palette");
-        }
-        JAVA_WATER_ID = waterRuntimeId;
 
         BlockTranslator1_16_100.init();
         BlockTranslator1_16_210.init();
@@ -340,7 +332,6 @@ public abstract class BlockTranslator {
             throw new AssertionError("Unable to find Bedrock water in palette");
         }
         bedrockWaterId = bedrockWaterRuntimeId;
-		bedrockWaterId = waterRuntimeId;
 
         if (javaWaterRuntimeId == -1) {
             throw new AssertionError("Unable to find Java water in palette");
