@@ -41,10 +41,6 @@ public class CooldownUtils {
     public static void setShowCooldown(String showCooldown) {
         SHOW_COOLDOWN = CooldownType.getByName(showCooldown);
     }
-    
-    public static void setActionbarCooldown(boolean actionbarCooldown) {
-    	ACTIONBAR_COOLDOWN = actionbarCooldown;
-    }
 
     /**
      * Starts sending the fake cooldown to the Bedrock client.
