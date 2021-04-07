@@ -67,6 +67,7 @@ import org.geysermc.floodgate.crypto.AesCipher;
 import org.geysermc.floodgate.crypto.AesKeyProducer;
 import org.geysermc.floodgate.crypto.Base64Topping;
 import org.geysermc.floodgate.crypto.FloodgateCipher;
+import org.jetbrains.annotations.Contract;
 
 import javax.naming.directory.Attribute;
 import javax.naming.directory.InitialDirContext;
@@ -220,8 +221,7 @@ public class GeyserConnector {
             }
         }
 
-        CooldownUtils.setShowCooldown(config.isShowCooldown());
-        CooldownUtils.setActionbarCooldown(config.isActionbarCooldown());
+        CooldownUtils.setShowCooldown(config.getShowCooldown());
         DimensionUtils.changeBedrockNetherId(config.isAboveBedrockNetherBuilding()); // Apply End dimension ID workaround to Nether
         SkullBlockEntityTranslator.ALLOW_CUSTOM_SKULLS = config.isAllowCustomSkulls();
 
