@@ -60,6 +60,7 @@ import com.nukkitx.protocol.bedrock.data.command.CommandPermission;
 import com.nukkitx.protocol.bedrock.data.entity.EntityData;
 import com.nukkitx.protocol.bedrock.data.entity.EntityFlag;
 import com.nukkitx.protocol.bedrock.packet.*;
+import com.nukkitx.protocol.bedrock.v431.Bedrock_v431;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -239,7 +240,7 @@ public class GeyserSession implements CommandSender {
     private boolean sneaking;
 
     /**
-     * Stores the pose that the server believes the player currently has.
+     * Stores the Java pose that the server and/or Geyser believes the player currently has.
      */
     @Setter
     private Pose pose = Pose.STANDING;
@@ -394,7 +395,6 @@ public class GeyserSession implements CommandSender {
     /**
      * If the current player is flying
      */
-    @Setter
     private boolean flying = false;
 
     /**
@@ -526,7 +526,12 @@ public class GeyserSession implements CommandSender {
         sendUpstreamPacket(entityPacket);
 
         CreativeContentPacket creativePacket = new CreativeContentPacket();
-        creativePacket.setContents(ItemRegistry.CREATIVE_ITEMS);
+        if (upstream.getSession().getPacketCodec().getProtocolVersion() < Bedrock_v431.V431_CODEC.getProtocolVersion()) {
+            creativePacket.setContents(ItemRegistry.getPre1_16_220CreativeContents());
+        } else {
+            // No additional work required
+            creativePacket.setContents(ItemRegistry.CREATIVE_ITEMS);
+        }
         sendUpstreamPacket(creativePacket);
 
         PlayStatusPacket playStatusPacket = new PlayStatusPacket();
@@ -914,11 +919,10 @@ public class GeyserSession implements CommandSender {
             playerEntity.updateBedrockAttributes(this);
             // the server *should* update our pose once it has returned to normal
         } else {
-            this.pose = sneaking ? Pose.SNEAKING : Pose.STANDING;
-            playerEntity.getMetadata().put(EntityData.BOUNDING_BOX_HEIGHT, sneaking ? 1.5f : playerEntity.getEntityType().getHeight());
-            playerEntity.getMetadata().getFlags().setFlag(EntityFlag.SNEAKING, sneaking);
-
-            collisionManager.updatePlayerBoundingBox();
+            if (!flying) {
+                // The pose and bounding box should not be updated if the player is flying
+                setSneakingPose(sneaking);
+            }
             collisionManager.updateScaffoldingFlags(false);
         }
 
@@ -930,11 +934,29 @@ public class GeyserSession implements CommandSender {
         }
     }
 
+    private void setSneakingPose(boolean sneaking) {
+        this.pose = sneaking ? Pose.SNEAKING : Pose.STANDING;
+        playerEntity.getMetadata().put(EntityData.BOUNDING_BOX_HEIGHT, sneaking ? 1.5f : playerEntity.getEntityType().getHeight());
+        playerEntity.getMetadata().getFlags().setFlag(EntityFlag.SNEAKING, sneaking);
+
+        collisionManager.updatePlayerBoundingBox();
+    }
+
     public void setSwimming(boolean swimming) {
         this.pose = swimming ? Pose.SWIMMING : Pose.STANDING;
         playerEntity.getMetadata().put(EntityData.BOUNDING_BOX_HEIGHT, swimming ? 0.6f : playerEntity.getEntityType().getHeight());
         playerEntity.getMetadata().getFlags().setFlag(EntityFlag.SWIMMING, swimming);
         playerEntity.updateBedrockMetadata(this);
+    }
+
+    public void setFlying(boolean flying) {
+        this.flying = flying;
+
+        if (sneaking) {
+            // update bounding box as it is not reduced when flying
+            setSneakingPose(!flying);
+            playerEntity.updateBedrockMetadata(this);
+        }
     }
 
     /**

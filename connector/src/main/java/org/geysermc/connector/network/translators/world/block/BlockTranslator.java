@@ -55,7 +55,7 @@ public abstract class BlockTranslator {
      * The Java block runtime ID of air
      */
     public static final int JAVA_AIR_ID = 0;
-    public static int JAVA_WATER_ID;
+    public static final int JAVA_WATER_ID;
     /**
      * The Bedrock block runtime ID of air
      */
@@ -64,6 +64,9 @@ public abstract class BlockTranslator {
 
     private final Int2IntMap javaToBedrockBlockMap = new Int2IntOpenHashMap();
     private final Int2IntMap bedrockToJavaBlockMap = new Int2IntOpenHashMap();
+
+    private final NbtList<NbtMap> bedrockBlockStates;
+
     /**
      * Stores a list of differences in block identifiers.
      * Items will not be added to this list if the key and value is the same.
@@ -215,6 +218,9 @@ public abstract class BlockTranslator {
 
             } else if (javaId.startsWith("minecraft:spawner")) {
                 spawnerRuntimeId = javaRuntimeId;
+
+            } else if ("minecraft:water[level=0]".equals(javaId)) {
+                waterRuntimeId = javaRuntimeId;
             }
         }
 
@@ -238,6 +244,11 @@ public abstract class BlockTranslator {
         }
         JAVA_RUNTIME_SPAWNER_ID = spawnerRuntimeId;
 
+        if (waterRuntimeId == -1) {
+            throw new AssertionError("Unable to find Java water in palette");
+        }
+        JAVA_WATER_ID = waterRuntimeId;
+
         BlockTranslator1_16_100.init();
         BlockTranslator1_16_210.init();
         BLOCKS_JSON = null; // We no longer require this so let it garbage collect away
@@ -251,6 +262,7 @@ public abstract class BlockTranslator {
         try (NBTInputStream nbtInputStream = new NBTInputStream(new DataInputStream(new GZIPInputStream(stream)))) {
             NbtMap blockPalette = (NbtMap) nbtInputStream.readTag();
             blocksTag = (NbtList<NbtMap>) blockPalette.getList("blocks", NbtType.COMPOUND);
+            this.bedrockBlockStates = blocksTag;
         } catch (Exception e) {
             throw new AssertionError("Unable to get blocks from runtime block states", e);
         }
@@ -435,6 +447,10 @@ public abstract class BlockTranslator {
 
     public int getBedrockWaterId() {
         return bedrockWaterId;
+    }
+
+    public NbtList<NbtMap> getAllBedrockBlockStates() {
+        return this.bedrockBlockStates;
     }
 
     /**
