@@ -793,15 +793,6 @@ public class GeyserSession implements CommandSender {
             public void packetReceived(PacketReceivedEvent event) {
                 if (!closed) {
 					handleDownstreamPacket(event.getPacket());
-                    // Required, or else Floodgate players break with Bukkit chunk caching
-                    if (event.getPacket() instanceof LoginSuccessPacket) {
-                        GameProfile profile = ((LoginSuccessPacket) event.getPacket()).getProfile();
-                        playerEntity.setUsername(profile.getName());
-                        playerEntity.setUuid(profile.getId());
-
-                        // Check if they are not using a linked account
-                        if (remoteAuthType == AuthType.OFFLINE || playerEntity.getUuid().getMostSignificantBits() == 0) {
-                            SkinManager.handleBedrockSkin(playerEntity, clientData);
                         }
                     }
 
@@ -823,14 +814,14 @@ public class GeyserSession implements CommandSender {
 
     public void handleDownstreamPacket(Packet packet) {
         // Required, or else Floodgate players break with Bukkit chunk caching
-        if (packet instanceof LoginSuccessPacket) {
-            GameProfile profile = ((LoginSuccessPacket) packet).getProfile();
+        if (event.getPacket() instanceof LoginSuccessPacket) {
+            GameProfile profile = ((LoginSuccessPacket) event.getPacket()).getProfile();
             playerEntity.setUsername(profile.getName());
             playerEntity.setUuid(profile.getId());
 
             // Check if they are not using a linked account
-            if (connector.getAuthType() == AuthType.OFFLINE || playerEntity.getUuid().getMostSignificantBits() == 0) {
-                SkinManager.handleBedrockSkin(playerEntity, clientData);
+            if (remoteAuthType == AuthType.OFFLINE || playerEntity.getUuid().getMostSignificantBits() == 0) {
+				SkinManager.handleBedrockSkin(playerEntity, clientData);
             }
         }
 
