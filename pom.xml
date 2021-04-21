@@ -72,18 +72,11 @@
     </repositories>
 
     <distributionManagement>
-        <repository>
-            <id>bundabrg-repo</id>
-            <url>
-                https://repo.worldguard.com.au/repository/maven-releases
-            </url>
-        </repository>
-        <snapshotRepository>
-            <id>bundabrg-repo</id>
-            <url>
-                https://repo.worldguard.com.au/repository/maven-snapshots
-            </url>
-        </snapshotRepository>
+   	<repository>
+     	<id>github</id>
+     	<name>GeyserAndroidHellohi3654</name>
+     	<url>https://maven.pkg.github.com/hellohi3654/Geyser</url>
+  	</repository>
     </distributionManagement>
 
     <dependencies>
