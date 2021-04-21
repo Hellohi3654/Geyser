@@ -133,7 +133,6 @@ public abstract class BlockTranslator {
         int furnaceLitRuntimeId = -1;
         int spawnerRuntimeId = -1;
         int uniqueJavaId = -1;
-        int waterRuntimeId = -1;
         Iterator<Map.Entry<String, JsonNode>> blocksIterator = BLOCKS_JSON.fields();
         while (blocksIterator.hasNext()) {
             javaRuntimeId++;
