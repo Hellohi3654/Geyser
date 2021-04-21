@@ -472,6 +472,8 @@ public class GeyserSession implements CommandSender {
         this.collisionManager = new CollisionManager(this);
 
         this.playerEntity = new SessionPlayerEntity(this);
+	this.worldCache = new WorldCache(this);
+        this.windowCache = new WindowCache(this);
         collisionManager.updatePlayerBoundingBox(this.playerEntity.getPosition());
 
         this.playerInventory = new PlayerInventory();
