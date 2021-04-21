@@ -126,6 +126,7 @@ public abstract class BlockTranslator {
             throw new AssertionError("Unable to load Java block mappings", e);
         }
 
+        int waterRuntimeId = -1;
         int javaRuntimeId = -1;
         int cobwebRuntimeId = -1;
         int furnaceRuntimeId = -1;
