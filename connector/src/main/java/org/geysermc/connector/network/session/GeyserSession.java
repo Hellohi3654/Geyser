@@ -798,8 +798,8 @@ public class GeyserSession implements CommandSender {
             public void packetReceived(PacketReceivedEvent event) {
                 if (!closed) {
 					handleDownstreamPacket(event.getPacket());
-                        }
                     }
+            }
 
             @Override
             public void packetError(PacketErrorEvent event) {
@@ -819,8 +819,8 @@ public class GeyserSession implements CommandSender {
 
     public void handleDownstreamPacket(Packet packet) {
         // Required, or else Floodgate players break with Bukkit chunk caching
-        if (event.getPacket() instanceof LoginSuccessPacket) {
-            GameProfile profile = ((LoginSuccessPacket) event.getPacket()).getProfile();
+        if (packet instanceof LoginSuccessPacket) {
+            GameProfile profile = ((LoginSuccessPacket) packet).getProfile();
             playerEntity.setUsername(profile.getName());
             playerEntity.setUuid(profile.getId());
 
