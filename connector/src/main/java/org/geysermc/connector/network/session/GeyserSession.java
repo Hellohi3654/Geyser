@@ -463,8 +463,6 @@ public class GeyserSession implements CommandSender {
         this.chunkCache = new ChunkCache(this);
         this.entityCache = new EntityCache(this);
         this.effectCache = new EntityEffectCache();
-        this.worldCache = new WorldCache(this);
-        this.windowCache = new WindowCache(this);
 
         this.collisionManager = new CollisionManager(this);
 
