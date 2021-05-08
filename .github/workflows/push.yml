@@ -1,6 +1,6 @@
-name: Build Pull Request
+name: Build Push
 
-on: [pull_request]
+on: [push]
 
 jobs:
   build:
