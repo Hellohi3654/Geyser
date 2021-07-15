@@ -66,6 +66,14 @@
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </repository>
     </repositories>
+         
+    <distributionManagement>
+   	<repository>
+     	<id>github</id>
+     	<name>GeyserAndroidHellohi3654</name>
+     	<url>https://maven.pkg.github.com/hellohi3654/Geyser</url>
+  	</repository>
+    </distributionManagement>
 
     <dependencies>
         <dependency>
@@ -76,3 +84,4 @@
         </dependency>
     </dependencies>
 </project>
+{"mode":"full","isActive":false}
