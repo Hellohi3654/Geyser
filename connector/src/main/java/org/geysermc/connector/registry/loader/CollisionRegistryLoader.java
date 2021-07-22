@@ -26,10 +26,11 @@
 package org.geysermc.connector.registry.loader;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.google.common.collect.BiMap;
 import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import lombok.AllArgsConstructor;
 import org.geysermc.connector.GeyserConnector;
 import org.geysermc.connector.network.translators.collision.BoundingBox;
 import org.geysermc.connector.network.translators.collision.CollisionRemapper;
@@ -39,30 +40,29 @@ import org.geysermc.connector.network.translators.collision.translators.OtherCol
 import org.geysermc.connector.network.translators.collision.translators.SolidCollision;
 import org.geysermc.connector.registry.BlockRegistries;
 import org.geysermc.connector.utils.FileUtils;
-import org.reflections.Reflections;
+import org.geysermc.connector.utils.Object2IntBiMap;
 
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+/**
+ * Loads collision data from the given resource path.
+ */
 public class CollisionRegistryLoader extends MultiResourceRegistryLoader<String, Map<Integer, BlockCollision>> {
 
     @Override
     public Map<Integer, BlockCollision> load(Pair<String, String> input) {
         Int2ObjectMap<BlockCollision> collisions = new Int2ObjectOpenHashMap<>();
 
-        List<Class<?>> collisionTypes = new ArrayList<>();
-        Map<Class<?>, CollisionRemapper> annotationMap = new HashMap<>();
-        Reflections ref = GeyserConnector.getInstance().useXmlReflections() ? FileUtils.getReflections(input.key()) : new Reflections(input.key());
-        for (Class<?> clazz : ref.getTypesAnnotatedWith(CollisionRemapper.class)) {
+        Map<Class<?>, CollisionInfo> annotationMap = new IdentityHashMap<>();
+        for (Class<?> clazz : FileUtils.getGeneratedClassesForAnnotation(CollisionRemapper.class.getName())) {
             GeyserConnector.getInstance().getLogger().debug("Found annotated collision translator: " + clazz.getCanonicalName());
 
-            collisionTypes.add(clazz);
-            annotationMap.put(clazz, clazz.getAnnotation(CollisionRemapper.class));
+            CollisionRemapper collisionRemapper = clazz.getAnnotation(CollisionRemapper.class);
+            annotationMap.put(clazz, new CollisionInfo(collisionRemapper, Pattern.compile(collisionRemapper.regex()), Pattern.compile(collisionRemapper.paramRegex())));
         }
 
         // Load collision mappings file
@@ -75,36 +75,35 @@ public class CollisionRegistryLoader extends MultiResourceRegistryLoader<String,
             throw new AssertionError("Unable to load collision data", e);
         }
 
-        BiMap<String, Integer> javaIdBlockMap = BlockRegistries.JAVA_IDENTIFIERS.get();
+        Object2IntBiMap<String> javaIdBlockMap = BlockRegistries.JAVA_IDENTIFIERS.get();
 
         // Map of classes that don't change based on parameters that have already been created
-        Map<Class<?>, BlockCollision> instantiatedCollision = new HashMap<>();
-        for (Map.Entry<String, Integer> entry : javaIdBlockMap.entrySet()) {
-            BlockCollision newCollision = instantiateCollision(entry.getKey(), entry.getValue(), collisionTypes, annotationMap, instantiatedCollision, collisionList);
+        Map<Class<?>, BlockCollision> instantiatedCollision = new IdentityHashMap<>();
+        for (Object2IntMap.Entry<String> entry : javaIdBlockMap.object2IntEntrySet()) {
+            BlockCollision newCollision = instantiateCollision(entry.getKey(), entry.getIntValue(), annotationMap, instantiatedCollision, collisionList);
             if (newCollision != null) {
                 instantiatedCollision.put(newCollision.getClass(), newCollision);
             }
-            collisions.put(entry.getValue().intValue(), newCollision);
+            collisions.put(entry.getIntValue(), newCollision);
         }
         return collisions;
     }
 
-    private BlockCollision instantiateCollision(String blockID, int numericBlockID, List<Class<?>> collisionTypes, Map<Class<?>, CollisionRemapper> annotationMap, Map<Class<?>, BlockCollision> instantiatedCollision, ArrayNode collisionList) {
-
-        String blockName = blockID.split("\\[")[0].replace("minecraft:", "");
+    private BlockCollision instantiateCollision(String blockID, int numericBlockID, Map<Class<?>, CollisionInfo> annotationMap, Map<Class<?>, BlockCollision> instantiatedCollision, ArrayNode collisionList) {
+        String[] blockIdParts = blockID.split("\\[");
+        String blockName = blockIdParts[0].replace("minecraft:", "");
         String params = "";
         if (blockID.contains("[")) {
-            params = "[" + blockID.split("\\[")[1];
+            params = "[" + blockIdParts[1];
         }
         int collisionIndex = BlockRegistries.JAVA_BLOCKS.get(numericBlockID).getCollisionIndex();
 
-        for (Class<?> type : collisionTypes) {
-            CollisionRemapper annotation = annotationMap.get(type);
+        for (Map.Entry<Class<?>, CollisionInfo> collisionRemappers : annotationMap.entrySet()) {
+            Class<?> type = collisionRemappers.getKey();
+            CollisionInfo collisionInfo = collisionRemappers.getValue();
+            CollisionRemapper annotation = collisionInfo.collisionRemapper;
 
-            Pattern pattern = Pattern.compile(annotation.regex());
-            Pattern paramsPattern = Pattern.compile(annotation.paramRegex());
-
-            if (pattern.matcher(blockName).find() && paramsPattern.matcher(params).find()) {
+            if (collisionInfo.pattern.matcher(blockName).find() && collisionInfo.paramsPattern.matcher(params).find()) {
                 try {
                     if (!annotation.usesParams() && instantiatedCollision.containsKey(type)) {
                         return instantiatedCollision.get(type);
@@ -167,5 +166,15 @@ public class CollisionRegistryLoader extends MultiResourceRegistryLoader<String,
         }
 
         return collision;
+    }
+
+    /**
+     * Used to prevent patterns from being compiled more than needed
+     */
+    @AllArgsConstructor
+    public static class CollisionInfo {
+        private final CollisionRemapper collisionRemapper;
+        private final Pattern pattern;
+        private final Pattern paramsPattern;
     }
 }
