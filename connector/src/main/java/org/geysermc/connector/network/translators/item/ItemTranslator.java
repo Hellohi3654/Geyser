@@ -32,6 +32,7 @@ import com.nukkitx.nbt.NbtMap;
 import com.nukkitx.nbt.NbtMapBuilder;
 import com.nukkitx.nbt.NbtType;
 import com.nukkitx.protocol.bedrock.data.inventory.ItemData;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.geysermc.connector.GeyserConnector;
@@ -96,9 +97,16 @@ public abstract class ItemTranslator {
      * @param mappings item mappings to use while translating. This can't just be a Geyser session as this method is used
      *                 when loading recipes.
      */
-    public static ItemStack translateToJava(ItemData data, ItemMappings mappings) {
+    public static ItemStack translateToJava(GeyserSession session, ItemData data, ItemMappings mappings) {
         if (data == null) {
             return new ItemStack(0);
+        }
+		// Restore the item back to its original state if we replaced the item with custom model data
+        if (session != null && session.getResourcePackCache().isCustomModelDataActive()) {
+            int id = session.getResourcePackCache().getBedrockCustomIdToProperBedrockId().getOrDefault(data.getId(), -1);
+            if (id != -1) {
+                data = data.toBuilder().id(id).build();
+            }
         }
 
         ItemMapping javaItem = mappings.getMapping(data);
@@ -177,6 +185,17 @@ public abstract class ItemTranslator {
             canPlace = getCanModify(canPlaceOn, canPlace);
             builder.canBreak(canBreak);
             builder.canPlace(canPlace);
+
+            // Check to see if the item has CustomModelData
+            IntTag customModelData = nbt.get("CustomModelData");
+            if (session.getResourcePackCache().isCustomModelDataActive() && customModelData != null) {
+                // If we're expecting custom model data and it's present, look for the Bedrock "replacement" we set up.
+                Int2IntMap map = session.getResourcePackCache().getJavaToCustomModelDataToBedrockId().get(stack.getId());
+                if (map != null) {
+                    builder.id(map.get(customModelData.getValue().intValue()));
+                    builder.damage(0);
+                }
+            }
         }
 
         return builder.build();

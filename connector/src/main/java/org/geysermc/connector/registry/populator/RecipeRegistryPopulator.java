@@ -166,10 +166,10 @@ public class RecipeRegistryPopulator {
             /* Convert into a Java recipe class for autocrafting */
             List<Ingredient> ingredients = new ArrayList<>();
             for (ItemData input : inputs) {
-                ingredients.add(new Ingredient(new ItemStack[]{ItemTranslator.translateToJava(input, mappings)}));
+                ingredients.add(new Ingredient(new ItemStack[]{ItemTranslator.translateToJava(null, input, mappings)}));
             }
             ShapedRecipeData data = new ShapedRecipeData(shape.get(0).length(), shape.size(), "crafting_table",
-                    ingredients.toArray(new Ingredient[0]), ItemTranslator.translateToJava(output, mappings));
+                    ingredients.toArray(new Ingredient[0]), ItemTranslator.translateToJava(null, output, mappings));
             Recipe recipe = new Recipe(RecipeType.CRAFTING_SHAPED, "", data);
             recipes.put(netId, recipe);
             /* Convert end */
@@ -186,10 +186,10 @@ public class RecipeRegistryPopulator {
         /* Convert into a Java Recipe class for autocrafting */
         List<Ingredient> ingredients = new ArrayList<>();
         for (ItemData input : inputs) {
-            ingredients.add(new Ingredient(new ItemStack[]{ItemTranslator.translateToJava(input, mappings)}));
+            ingredients.add(new Ingredient(new ItemStack[]{ItemTranslator.translateToJava(null, input, mappings)}));
         }
         ShapelessRecipeData data = new ShapelessRecipeData("crafting_table",
-                ingredients.toArray(new Ingredient[0]), ItemTranslator.translateToJava(output, mappings));
+                ingredients.toArray(new Ingredient[0]), ItemTranslator.translateToJava(null, output, mappings));
         Recipe recipe = new Recipe(RecipeType.CRAFTING_SHAPELESS, "", data);
         recipes.put(netId, recipe);
         /* Convert end */

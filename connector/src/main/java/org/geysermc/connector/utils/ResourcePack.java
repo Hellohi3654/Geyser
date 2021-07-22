@@ -60,6 +60,7 @@ public class ResourcePack {
         File directory = GeyserConnector.getInstance().getBootstrap().getConfigFolder().resolve("packs").toFile();
 
         if (!directory.exists()) {
+            //noinspection ResultOfMethodCallIgnored
             directory.mkdir();
 
             // As we just created the directory it will be empty
@@ -68,43 +69,54 @@ public class ResourcePack {
 
         for (File file : directory.listFiles()) {
             if (file.getName().endsWith(".zip") || file.getName().endsWith(".mcpack")) {
-                ResourcePack pack = new ResourcePack();
-
-                pack.sha256 = FileUtils.calculateSHA256(file);
-
-                Stream<? extends ZipEntry> stream = null;
-                try {
-                    ZipFile zip = new ZipFile(file);
-
-                    stream = zip.stream();
-                    stream.forEach((x) -> {
-                        if (x.getName().contains("manifest.json")) {
-                            try {
-                                ResourcePackManifest manifest = FileUtils.loadJson(zip.getInputStream(x), ResourcePackManifest.class);
-                                // Sometimes a pack_manifest file is present and not in a valid format,
-                                // but a manifest file is, so we null check through that one
-                                if (manifest.getHeader().getUuid() != null) {
-                                    pack.file = file;
-                                    pack.manifest = manifest;
-                                    pack.version = ResourcePackManifest.Version.fromArray(manifest.getHeader().getVersion());
-
-                                    PACKS.put(pack.getManifest().getHeader().getUuid().toString(), pack);
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    });
-                } catch (Exception e) {
-                    GeyserConnector.getInstance().getLogger().error(LanguageUtils.getLocaleStringLog("geyser.resource_pack.broken", file.getName()));
-                    e.printStackTrace();
-                } finally {
-                    if (stream != null) {
-                        stream.close();
-                    }
+                ResourcePack pack = loadPack(file);
+                if (pack != null) {
+                    PACKS.put(pack.getManifest().getHeader().getUuid().toString(), pack);
                 }
             }
         }
+    }
+
+    public static ResourcePack loadPack(File file) {
+        ResourcePack pack = new ResourcePack();
+
+        pack.sha256 = FileUtils.calculateSHA256(file);
+
+        Stream<? extends ZipEntry> stream = null;
+        try {
+            ZipFile zip = new ZipFile(file);
+
+            stream = zip.stream();
+            stream.forEach((x) -> {
+                if (x.getName().contains("manifest.json")) {
+                    try {
+                        ResourcePackManifest manifest = FileUtils.loadJson(zip.getInputStream(x), ResourcePackManifest.class);
+                        // Sometimes a pack_manifest file is present and not in a valid format,
+                        // but a manifest file is, so we null check through that one
+                        if (manifest.getHeader().getUuid() != null) {
+                            pack.file = file;
+                            pack.manifest = manifest;
+                            pack.version = ResourcePackManifest.Version.fromArray(manifest.getHeader().getVersion());
+
+                            PACKS.put(pack.getManifest().getHeader().getUuid().toString(), pack);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        } catch (Exception e) {
+            GeyserConnector.getInstance().getLogger().error(LanguageUtils.getLocaleStringLog("geyser.resource_pack.broken", file.getName()));
+            e.printStackTrace();
+        } finally {
+            if (stream != null) {
+                stream.close();
+            }
+        }
+        if (pack.file != null) {
+            return pack;
+        }
+        return null;
     }
 
     public byte[] getSha256() {
